@@ -100,6 +100,12 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .temp-chip { height: 20px; padding: 0 7px; border: 1px solid #d5d2ca; background: transparent; border-radius: 2px; color: #757770; font: 9px var(--mono); cursor: pointer; }
 
 .temp-chip:hover, .temp-chip.active { color: #252a27; border-color: #85867e; background: #e5e1d9; }
+
+.wood-color-row { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 9px; color: #757770; font: 9px var(--mono); letter-spacing: .04em; }
+
+.wood-color-row[hidden] { display: none; }
+
+.wood-color-row .light-color-picker input { width: 34px; height: 21px; padding: 1px; border: 1px solid #cac6bd; background: #fff; border-radius: 2px; cursor: pointer; }
 .position-heading { margin-top: 10px; }
 .position-heading span:last-child { color: #aaa79f; }
 .coordinate-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 6px 0 9px; }

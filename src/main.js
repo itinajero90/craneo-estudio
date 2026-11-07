@@ -40,6 +40,7 @@ const state = {
   scene: null,
   helpers: new Map(),
   envIntensity: 0.62,
+  woodTint: '#ffffff',
 };
 
 root.innerHTML = `
@@ -77,6 +78,10 @@ root.innerHTML = `
             <button class="material-chip" data-material="metal" title="Acero pulido">Metal</button>
             <button class="material-chip" data-material="glass" title="Vidrio esmerilado">Vidrio</button>
             <button class="material-chip" data-material="wood" title="Madera tallada">Madera</button>
+          </div>
+          <div class="wood-color-row" id="wood-color-row" hidden>
+            <label for="wood-color">Color de la madera</label>
+            <div class="light-color-picker"><input id="wood-color" type="color" value="#ffffff" /><span id="wood-color-hex">#FFFFFF</span></div>
           </div>
         </div>
       </section>
@@ -627,13 +632,23 @@ function kelvinToHex(kelvin) {
   return `#${[clamp(red), clamp(green), clamp(blue)].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
+// Los extremos del rango (2000 K muy naranja, 10000 K muy azul) tiñen el modelo
+// entero. Se mezcla el color con blanco (60 % color / 40 % blanco) para que la
+// temperatura sea cálida o fría sin "pintar" el hueso por completo.
+function softKelvinHex(kelvin) {
+  const mix = 0.6;
+  const channel = (value) => Math.round(value * mix + 255 * (1 - mix));
+  const rgb = kelvinToHex(kelvin).slice(1);
+  return `#${[0, 2, 4].map((i) => channel(parseInt(rgb.slice(i, i + 2), 16)).toString(16).padStart(2, '0')).join('')}`;
+}
+
 function nearestKelvin(hex) {
-  const color = new THREE.Color(hex);
-  const target = [Math.round(color.r * 255), Math.round(color.g * 255), Math.round(color.b * 255)];
+  const base = hex.replace('#', '');
+  const target = [0, 2, 4].map((i) => parseInt(base.slice(i, i + 2), 16));
   let best = 5000; let bestDistance = Infinity;
   for (let kelvin = 2000; kelvin <= 10000; kelvin += 100) {
-    const rgb = kelvinToHex(kelvin).slice(1);
-    const sample = [parseInt(rgb.slice(0, 2), 16), parseInt(rgb.slice(2, 4), 16), parseInt(rgb.slice(4, 6), 16)];
+    const rgb = softKelvinHex(kelvin).slice(1);
+    const sample = [0, 2, 4].map((i) => parseInt(rgb.slice(i, i + 2), 16));
     const distance = (target[0] - sample[0]) ** 2 + (target[1] - sample[1]) ** 2 + (target[2] - sample[2]) ** 2;
     if (distance < bestDistance) { bestDistance = distance; best = kelvin; }
   }
@@ -715,7 +730,7 @@ function renderSelectedLight() {
   const setKelvin = (kelvin) => {
     const value = Math.max(2000, Math.min(10000, Math.round(kelvin / 100) * 100));
     light.kelvin = value;
-    applyLightColor(light, kelvinToHex(value));
+    applyLightColor(light, softKelvinHex(value));
     syncTempUI(light);
   };
   $('#light-temp').addEventListener('input', (event) => {
@@ -839,7 +854,7 @@ function presetMaterialFor(mesh, preset) {
   } else if (preset === 'glass') {
     material = new THREE.MeshPhysicalMaterial({ color: '#eef4f6', metalness: 0, roughness: 0.14, transmission: 0.9, thickness: 0.4, ior: 1.45, transparent: true });
   } else {
-    material = new THREE.MeshStandardMaterial({ map: makeWoodTexture(), color: '#ffffff', roughness: 0.75, metalness: 0 });
+    material = new THREE.MeshStandardMaterial({ map: makeWoodTexture(), color: state.woodTint || '#ffffff', roughness: 0.75, metalness: 0 });
   }
   mesh.userData.presetMaterials[preset] = material;
   return material;
@@ -864,7 +879,23 @@ function applyMaterial(preset) {
     materials.forEach((material) => { if (material.emissive) { material.emissive.set('#9a482f'); material.emissiveIntensity = 0.38; } });
   }
   $('#material-value').textContent = { bone: 'Hueso', metal: 'Metal', glass: 'Vidrio', wood: 'Madera' }[preset] || 'Hueso';
+  $('#wood-color-row').hidden = preset !== 'wood';
 }
+
+// Tinte de la madera: multiplica el color de la textura generada por código.
+function setWoodTint(color) {
+  state.woodTint = color;
+  const hex = $('#wood-color-hex');
+  const input = $('#wood-color');
+  if (hex) hex.textContent = color.toUpperCase();
+  if (input && input.value !== color) input.value = color;
+  state.modelMeshes.forEach((mesh) => {
+    const material = mesh.userData.presetMaterials?.wood;
+    if (material) material.color.set(color);
+  });
+}
+
+$('#wood-color').addEventListener('input', (event) => setWoodTint(event.target.value));
 
 $$('.material-chip').forEach((button) => button.addEventListener('click', () => {
   $$('.material-chip').forEach((item) => item.classList.toggle('active', item === button));
@@ -1007,6 +1038,7 @@ $('#reset-all').addEventListener('click', () => {
   $$('.bg-swatch').forEach((item, id) => item.classList.toggle('active', id === 0));
   $('#bg-custom-color').value = '#d7d2c8';
   setBackground('#d7d2c8');
+  setWoodTint('#ffffff');
   toast('Espacio de estudio restaurado.');
 });
 
