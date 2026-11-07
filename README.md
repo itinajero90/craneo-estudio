@@ -3,6 +3,19 @@
 Visor 3D interactivo de un craneo humano con herramientas de dibujo y observacion.
 Construido con **Three.js + Vite** (sin framework).
 
+![Captura de la aplicacion: visor 3D del craneo con panel de modelo, iluminacion y hoja de dibujo](docs/craneo-studio.png)
+
+## Para que sirve
+
+Herramienta de **estudio anatomico y dibujo** (estilo mesa de trabajo):
+
+- **Centro — visor 3D:** gira el craneo con el raton, encuadra con presets de camara y selecciona cualquiera de sus 53 piezas.
+- **Panel izquierdo — forma y luz:** rota el modelo, cambia el material (hueso, metal, vidrio, madera), añade fuentes de luz arrastrables y ajusta su **temperatura en Kelvin** (cálido 2000 K → frio 10000 K) y color de fondo del visor.
+- **Panel derecho — tu boceto:** una hoja de dibujo para esquiar el craneo como referencia de observacion (trazo, grosor, deshacer, limpiar).
+- **Exportar:** el boton *PNG* guarda la pose actual con **fondo transparente** para usarla en tus diseños.
+
+Ideal para estudiantes de arte, anatomia o odontologia que quieren un modelo de referencia girable con iluminacion controlable.
+
 ## Requisitos
 
 - Node.js 18+ (recomendado 20+)
