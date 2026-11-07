@@ -106,7 +106,8 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .coordinate-row label { display: flex; align-items: center; gap: 4px; color: #a05c47; font: 9px var(--mono); }
 .coordinate-row input { width: 100%; min-width: 0; padding: 5px 4px; border: 1px solid #d7d3ca; background: #f0ede6; border-radius: 2px; color: #474943; font: 9px var(--mono); }
 .shadow-toggle { display: flex; align-items: center; gap: 6px; color: #6e706a; font-size: 9px; cursor: pointer; }
-.shadow-toggle input { position: absolute; opacity: 0; }
+.shadow-toggle { position: relative; }
+.shadow-toggle input { position: absolute; inset: 0; opacity: 0; }
 .checkmark { width: 11px; height: 11px; border: 1px solid #aaa79f; border-radius: 2px; }
 .shadow-toggle input:checked + .checkmark { background: #c86c50; border-color: #c86c50; box-shadow: inset 0 0 0 2px #f0ede6; }
 .shadow-toggle input:disabled + .checkmark { opacity: .4; }
