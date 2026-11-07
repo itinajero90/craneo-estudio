@@ -1,0 +1,6 @@
+Modelo: “High quality skull”
+Autor: Mariano Coretti
+Atribución: Created by Mariano Coretti.
+Licencia declarada por el autor: Creative Commons Attribution 3.0 (CC BY 3.0)
+Fuente: https://blenderartists.org/t/high-quality-skull-free-asset-download/1100360
+Adaptación: convertido de Blender 2.7 a GLB para OSSO; nombres de estructuras traducidos al español.
