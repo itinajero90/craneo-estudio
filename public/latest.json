@@ -1,11 +1,11 @@
 {
-    "platforms":  {
-                      "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d2RtUG8rVWhBSkhhKzN6VHhYOWdGVmF1L29jRjRYK0ZHQ21aM2RCWFNLcGpoK2NJWFpDZThvMGFxZHhvK0pxaWJmUFBPcGpoQVFVSmdpWFlOdUp1TndZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTczMDM4CWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjEKRE1wL3UwaGw1S1ZGdVlDbmUzN1Y2bWl6cWdQbXZveTRQTVZwRTR6cDB4c09tWHBsMzFTZVZHSDdjWUdsVXVxTHVUaEpKdEVYcExZSXBzR1NEcG0vQUE9PQo=",
-                                             "url":  "https://craneo-studio.vercel.app/craneo-studio-setup.exe"
-                                         }
-                  },
-    "pub_date":  "2026-11-08T21:46:55Z",
-    "version":  "0.2.1",
-    "notes":  "Version web con boton de descarga y actualizador apuntando a Vercel."
+  "version": "0.2.2",
+  "notes": "Instalador mas liviano y boton de descarga solo en la web",
+  "pub_date": "2026-11-08T23:02:18Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d1c5bzVjN21BMlJiTHIyR2krbW5kU1JqSHRBanJQL0NUOVZyV0YwdVBHSVh3cGxFQkFqN2hzaGNMU3FkVEVYYUw2bWpVZy95cS95MjFkaGgwQ05saUFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTc4OTM3CWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuMl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjIKWXpMYm9aRmVYYjhSYS9nS3hub3dxelF2Y0N1a3JxR212ZG9uT2UrclRQUXJNcHBFMzF1aldUMGlzNUlSTnRNckVnRHMvQzlyYWlKNHRQTkt3T2FlQXc9PQo=",
+      "url": "https://craneo-studio.vercel.app/craneo-studio-setup.exe"
+    }
+  }
 }

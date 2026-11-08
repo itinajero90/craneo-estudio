@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/craneo-studio-setup.exe",
-      "destination": "https://PLACEHOLDER.public.blob.vercel-storage.com/craneo-studio-setup.exe",
+      "destination": "https://gl4n1foi3keflnoq.public.blob.vercel-storage.com/craneo-studio-setup.exe",
       "permanent": false
     }
   ]
