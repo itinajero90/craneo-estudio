@@ -1,0 +1,11 @@
+{
+  "version": "0.2.1",
+  "notes": "Version web con boton de descarga y actualizador apuntando a Vercel",
+  "pub_date": "2026-11-08T21:23:58Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d2RtUG8rVWhBSkhhKzN6VHhYOWdGVmF1L29jRjRYK0ZHQ21aM2RCWFNLcGpoK2NJWFpDZThvMGFxZHhvK0pxaWJmUFBPcGpoQVFVSmdpWFlOdUp1TndZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTczMDM4CWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjEKRE1wL3UwaGw1S1ZGdVlDbmUzN1Y2bWl6cWdQbXZveTRQTVZwRTR6cDB4c09tWHBsMzFTZVZHSDdjWUdsVXVxTHVUaEpKdEVYcExZSXBzR1NEcG0vQUE9PQo=",
+      "url": "https://craneo-studio.vercel.app/craneo-studio-setup.exe"
+    }
+  }
+}
