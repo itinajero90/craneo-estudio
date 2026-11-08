@@ -105,6 +105,15 @@ root.innerHTML = `
         <div class="panel-heading"><div><span class="section-index">03</span><h2>Estructuras</h2></div><button class="text-button" id="show-all-bones">Mostrar todas</button></div>
         <div class="bone-list" id="bone-list"><div class="load-state">Cargando anatomía…</div></div>
       </section>
+      <section class="panel profiles-panel">
+        <div class="panel-heading"><div><span class="section-index">04</span><h2>Perfiles</h2></div><button class="add-button" id="save-profile" title="Guardar la configuración actual">+ Guardar</button></div>
+        <div class="light-config-row profile-name-row">
+          <label for="profile-name">Nombre de la pose</label>
+          <input class="profile-input" id="profile-name" type="text" maxlength="28" placeholder="Pose 1" />
+        </div>
+        <div class="profile-list" id="profile-list"></div>
+        <p class="panel-note profiles-note">Guarda luces, material, fondo y cámara para volver a esa pose cuando quieras.</p>
+      </section>
     <div class="sidebar-credit">MODELO ABIERTO · CC BY 3.0</div>
     </aside>
 
@@ -1111,6 +1120,135 @@ $('#reset-all').addEventListener('click', () => {
   setWoodTint('#ffffff');
   toast('Espacio de estudio restaurado.');
 });
+
+// --- Perfiles de pose: guardan luces, material, fondo y cámara en el navegador ---
+const PROFILE_KEY = 'craneo-studio-profiles';
+const MATERIAL_NAMES = { bone: 'Hueso', metal: 'Metal', glass: 'Vidrio', wood: 'Madera' };
+const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+
+function readProfiles() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PROFILE_KEY));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+function writeProfiles(profiles) {
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profiles)); } catch { toast('No se pudo guardar: el navegador bloqueó el almacenamiento.'); }
+}
+
+// Instantánea de toda la configuración actual de estudio.
+function captureProfile(name) {
+  const background = scene.background;
+  return {
+    id: `profile-${Date.now()}`,
+    name,
+    camera: { position: camera.position.toArray(), target: controls.target.toArray() },
+    rotation: ['x', 'y', 'z'].map((axis) => (state.modelRoot ? state.modelRoot.rotation[axis] : 0)),
+    material: $$('.material-chip.active')[0]?.dataset.material || 'bone',
+    woodTint: state.woodTint,
+    jawVariant: state.jawVariant,
+    background: background ? `#${background.getHexString()}` : '#d7d2c8',
+    ambient: state.envIntensity,
+    selectedLight: state.selectedLight,
+    lights: JSON.parse(JSON.stringify(state.lights)),
+  };
+}
+
+// Restaura un perfil replicando la misma mecánica de "Restaurar" por subsistemas.
+function loadProfile(profile) {
+  if (!state.modelRoot) { toast('El modelo aún no está listo.'); return; }
+  // Cámara (posición y objetivo reales; no obliga a coincidir con un preset)
+  camera.position.fromArray(profile.camera.position);
+  controls.target.fromArray(profile.camera.target);
+  controls.update();
+  syncZoom();
+  $$('.preset').forEach((item) => item.classList.remove('active'));
+  // Rotación del modelo + sliders sincronizados
+  const rotation = Array.isArray(profile.rotation) ? profile.rotation : [0, 0, 0];
+  ['x', 'y', 'z'].forEach((axis, index) => { state.modelRoot.rotation[axis] = Number(rotation[index]) || 0; });
+  $$('[data-rotation]').forEach((input) => {
+    const degrees = Math.round((Number(rotation[['x', 'y', 'z'].indexOf(input.dataset.rotation)]) || 0) * 180 / Math.PI);
+    input.value = String(degrees);
+    $(`#${input.id}-value`).textContent = `${degrees}°`;
+  });
+  // Material, tinte de madera y variante
+  const material = MATERIAL_NAMES[profile.material] ? profile.material : 'bone';
+  $$('.material-chip').forEach((item) => item.classList.toggle('active', item.dataset.material === material));
+  applyMaterial(material);
+  setWoodTint(profile.woodTint || '#ffffff');
+  setJawVariant(profile.jawVariant || 'full');
+  // Fondo del visor
+  const background = profile.background || '#d7d2c8';
+  const matchingSwatch = $$('.bg-swatch').find((item) => (item.dataset.bg || '').toLowerCase() === background.toLowerCase());
+  $$('.bg-swatch').forEach((item) => item.classList.toggle('active', item === matchingSwatch));
+  $('#bg-custom-color').value = background;
+  setBackground(background);
+  // Luz ambiente
+  const ambient = Math.round((Number(profile.ambient) || 0) * 100);
+  state.envIntensity = ambient / 100;
+  hemisphere.intensity = state.envIntensity;
+  $('#ambient').value = String(ambient);
+  $('#ambient-value').textContent = `${ambient}%`;
+  // Fuentes de luz: se retiran las actuales y se recrean desde el perfil
+  [...state.helpers.keys()].forEach((id) => {
+    const helper = state.helpers.get(id);
+    scene.remove(helper.light, helper.marker);
+    if (helper.light.target) scene.remove(helper.light.target);
+    state.helpers.delete(id);
+  });
+  state.lights = JSON.parse(JSON.stringify(Array.isArray(profile.lights) && profile.lights.length ? profile.lights : []));
+  if (!state.lights.length) {
+    state.lights = [{ id: 'key', name: 'Luz principal', type: 'directional', color: '#ffd7a1', intensity: 2.25, x: -2.5, y: 3.1, z: -3.4, enabled: true, shadow: true }];
+  }
+  state.selectedLight = state.lights.some((light) => light.id === profile.selectedLight) ? profile.selectedLight : state.lights[0].id;
+  state.lights.forEach(addLight);
+  renderLights(); // también repinta el panel "Ajustes de fuente"
+  toast(`Perfil "${profile.name}" cargado.`);
+}
+
+function renderProfiles() {
+  const list = $('#profile-list');
+  const profiles = readProfiles();
+  if (!profiles.length) {
+    list.innerHTML = '<p class="profile-empty">Sin perfiles guardados. Ajusta la escena, ponle nombre y pulsa Guardar.</p>';
+    return;
+  }
+  list.innerHTML = profiles.map((profile) => `
+    <div class="profile-row" data-id="${escapeHtml(profile.id)}">
+      <button class="profile-load" title="Cargar este perfil">
+        <strong>${escapeHtml(profile.name)}</strong>
+        <small>${profile.lights?.length || 0} luces · ${MATERIAL_NAMES[profile.material] || 'Hueso'}${profile.jawVariant === 'no-jaw' ? ' · sin mandíbula' : ''}</small>
+      </button>
+      <button class="profile-delete" title="Eliminar perfil" aria-label="Eliminar perfil ${escapeHtml(profile.name)}">✕</button>
+    </div>`).join('');
+  $$('.profile-row', list).forEach((row) => {
+    const profile = readProfiles().find((item) => item.id === row.dataset.id);
+    row.querySelector('.profile-load').addEventListener('click', () => profile && loadProfile(profile));
+    row.querySelector('.profile-delete').addEventListener('click', () => {
+      writeProfiles(readProfiles().filter((item) => item.id !== row.dataset.id));
+      renderProfiles();
+      toast('Perfil eliminado.');
+    });
+  });
+}
+
+$('#save-profile').addEventListener('click', () => {
+  if (!state.modelRoot) { toast('El modelo aún no está listo.'); return; }
+  const profiles = readProfiles();
+  const name = $('#profile-name').value.trim() || `Pose ${profiles.length + 1}`;
+  profiles.push(captureProfile(name));
+  writeProfiles(profiles);
+  $('#profile-name').value = '';
+  renderProfiles();
+  toast(`Perfil "${name}" guardado.`);
+});
+
+$('#profile-name').addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') $('#save-profile').click();
+});
+
+renderProfiles();
 
 $('#credits-dialog').showModal = $('#credits-dialog').showModal.bind($('#credits-dialog'));
 $$('a[href="#credits"]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); $('#credits-dialog').showModal(); }));
