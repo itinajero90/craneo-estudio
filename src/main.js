@@ -1254,3 +1254,76 @@ $('#credits-dialog').showModal = $('#credits-dialog').showModal.bind($('#credits
 $$('a[href="#credits"]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); $('#credits-dialog').showModal(); }));
 $('#close-credits').addEventListener('click', () => $('#credits-dialog').close());
 $('#credits-dialog').addEventListener('click', (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
+
+// --- Auto-update: solo dentro del .exe de Tauri ---
+// Comprueba el endpoint del updater y, si hay una versión más nueva,
+// muestra un aviso con botón para descargarla e instalarla.
+// En el navegador (modo dev) no hace nada.
+async function checkForUpdates() {
+  if (!('__TAURI_INTERNALS__' in window)) return;
+  try {
+    const { check } = await import('@tauri-apps/plugin-updater');
+    const update = await check();
+    if (update) showUpdateBanner(update);
+  } catch (error) {
+    console.warn('No se pudo comprobar actualizaciones:', error);
+  }
+}
+
+function showUpdateBanner(update) {
+  if ($('#update-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.innerHTML = `
+    <div class="update-text">
+      <strong>Nueva versión ${escapeHtml(update.version)}</strong>
+      <small>${escapeHtml(update.body || 'Hay una actualización disponible de OSSO · Craneo Studio.')}</small>
+    </div>
+    <button class="update-apply">Actualizar</button>
+    <button class="update-close" aria-label="Cerrar aviso de actualización">✕</button>`;
+  document.body.appendChild(banner);
+  requestAnimationFrame(() => banner.classList.add('is-visible'));
+  banner.querySelector('.update-close').addEventListener('click', () => banner.remove());
+  banner.querySelector('.update-apply').addEventListener('click', async () => {
+    const apply = banner.querySelector('.update-apply');
+    apply.disabled = true;
+    apply.textContent = 'Descargando…';
+    try {
+      const { relaunch } = await import('@tauri-apps/plugin-process');
+      let downloaded = 0;
+      let total = 0;
+      // En Windows el instalador cierra la app solo al instalar (limitación de NSIS).
+      await update.downloadAndInstall((event) => {
+        if (event.event === 'Started') total = event.data.contentLength || 0;
+        if (event.event === 'Progress') {
+          downloaded += event.data.chunkLength;
+          apply.textContent = total ? `Descargando ${Math.round(100 * downloaded / total)} %` : 'Descargando…';
+        }
+      });
+      apply.textContent = 'Instalado · reiniciando…';
+      await relaunch();
+    } catch (error) {
+      apply.disabled = false;
+      apply.textContent = 'Reintentar';
+      toast(`No se pudo actualizar: ${error.message || error}`);
+    }
+  });
+}
+
+checkForUpdates();
+setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
+
+// Muestra la versión real de la app en el pie (dentro del .exe);
+// en el navegador se queda el texto por defecto del HTML.
+async function syncAppVersion() {
+  if (!('__TAURI_INTERNALS__' in window)) return;
+  try {
+    const { getVersion } = await import('@tauri-apps/api/app');
+    const version = await getVersion();
+    const slot = $('.app-footer span:last-child');
+    if (slot) slot.textContent = `VERSIÓN DE ESTUDIO ${version}`;
+  } catch (error) {
+    console.warn('No se pudo leer la versión de la app:', error);
+  }
+}
+syncAppVersion();

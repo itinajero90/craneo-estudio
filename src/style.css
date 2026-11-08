@@ -98,6 +98,27 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .profile-delete { width: 30px; border: 0; border-left: 1px solid #d5d2ca; background: none; color: #a99f92; font-size: 12px; cursor: pointer; }
 
 .profile-delete:hover { color: #af5f46; background: #efe6dd; }
+
+/* Aviso de actualización (solo dentro del .exe) */
+#update-banner { position: fixed; right: 16px; bottom: 46px; z-index: 40; display: flex; align-items: center; gap: 12px; max-width: 350px; padding: 11px 13px; background: #141718; color: #e9e7e1; border: 1px solid #303333; border-left: 3px solid #d47a5d; border-radius: 3px; box-shadow: 0 8px 22px #14171844; font-family: var(--mono); opacity: 0; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease; }
+
+#update-banner.is-visible { opacity: 1; transform: none; }
+
+.update-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.update-text strong { font-size: 11px; font-weight: 500; }
+
+.update-text small { color: #afb1ab; font-size: 9px; line-height: 1.45; }
+
+.update-apply { border: 0; border-radius: 3px; background: #d47a5d; color: #1f1c19; font: 700 10px var(--mono); padding: 8px 11px; cursor: pointer; white-space: nowrap; }
+
+.update-apply:hover { background: #e7a087; }
+
+.update-apply:disabled { background: #5f625f; color: #b8bab5; cursor: default; }
+
+.update-close { border: 0; background: none; color: #888d88; font-size: 11px; cursor: pointer; padding: 2px; }
+
+.update-close:hover { color: #e9e7e1; }
 .add-button, .text-button { border: 0; background: none; color: #bd654b; font: 10px var(--mono); cursor: pointer; }
 .add-button:hover, .text-button:hover { color: #733b2e; }
 .lighting-panel { padding-bottom: 12px; }
