@@ -66,8 +66,10 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .range-group.compact { margin-top: 14px; }
 .material-group { margin-top: 12px; border-top: 1px solid #d8d5cd; padding-top: 9px; }
 .material-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 7px; }
-.material-chip { height: 25px; border: 1px solid #d5d2ca; background: transparent; border-radius: 2px; color: #757770; font: 9px var(--mono); cursor: pointer; }
-.material-chip:hover, .material-chip.active { color: #252a27; border-color: #85867e; background: #e5e1d9; }
+.material-chip, .variant-chip { height: 25px; border: 1px solid #d5d2ca; background: transparent; border-radius: 2px; color: #757770; font: 9px var(--mono); cursor: pointer; }
+.material-chip:hover, .material-chip.active, .variant-chip:hover, .variant-chip.active { color: #252a27; border-color: #85867e; background: #e5e1d9; }
+
+.variant-group .material-options { grid-template-columns: repeat(2, 1fr); }
 .add-button, .text-button { border: 0; background: none; color: #bd654b; font: 10px var(--mono); cursor: pointer; }
 .add-button:hover, .text-button:hover { color: #733b2e; }
 .lighting-panel { padding-bottom: 12px; }
@@ -126,6 +128,7 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .bone-row { width: 100%; display: grid; grid-template-columns: 15px 1fr 13px 13px; align-items: center; gap: 5px; padding: 5px 5px; border: 0; background: transparent; text-align: left; color: #686a64; cursor: pointer; }
 .bone-row:hover, .bone-row.is-selected { background: #e4dfd6; color: #262a27; }
 .bone-row.is-hidden { opacity: .35; }
+.bone-row.is-variant-off { display: none; }
 .bone-symbol { color: #bd725a; font-size: 13px; text-align: center; }
 .bone-name { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .bone-side { color: #9d9b93; font: 8px var(--mono); }

@@ -41,6 +41,7 @@ const state = {
   helpers: new Map(),
   envIntensity: 0.62,
   woodTint: '#ffffff',
+  jawVariant: 'full',
 };
 
 root.innerHTML = `
@@ -82,6 +83,12 @@ root.innerHTML = `
           <div class="wood-color-row" id="wood-color-row" hidden>
             <label for="wood-color">Color de la madera</label>
             <div class="light-color-picker"><input id="wood-color" type="color" value="#ffffff" /><span id="wood-color-hex">#FFFFFF</span></div>
+          </div>
+        </div>
+        <div class="range-group variant-group"><label>Modelo anatómico <output id="jaw-value">Completo</output></label>
+          <div class="material-options" role="group" aria-label="Variante del modelo">
+            <button class="variant-chip active" data-jaw="full" title="Cráneo completo: con mandíbula y dientes inferiores">Completo</button>
+            <button class="variant-chip" data-jaw="no-jaw" title="Cráneo sin mandíbula ni dientes inferiores">Sin mandíbula</button>
           </div>
         </div>
       </section>
@@ -360,6 +367,7 @@ function loadModel() {
     $('#model-status').classList.add('ready');
     $('#model-label').textContent = 'Cráneo humano · 53 piezas seleccionables';
     $('#mesh-count').textContent = `${boneEntries.length} PIEZAS VISIBLES`;
+    updateMeshCount();
     renderBoneList();
     // Material de hueso por defecto al cargar (mismo preset que muestra el chip activo).
     applyMaterial('bone');
@@ -397,14 +405,21 @@ function renderBoneList() {
       if (mesh.visible) selectBone(mesh);
       else mesh.visible = true;
       button.classList.toggle('is-hidden', !mesh.visible);
+      updateMeshCount();
     });
     button.addEventListener('contextmenu', (event) => {
       event.preventDefault();
       const mesh = sorted[Number(button.dataset.index)];
       mesh.visible = !mesh.visible;
       button.classList.toggle('is-hidden', !mesh.visible);
+      updateMeshCount();
     });
   });
+}
+
+function updateMeshCount() {
+  const visible = state.modelMeshes.filter((mesh) => mesh.visible).length;
+  $('#mesh-count').textContent = `${visible} PIEZAS VISIBLES`;
 }
 
 function selectBone(mesh) {
@@ -430,6 +445,22 @@ function selectBone(mesh) {
   toastTimer = setTimeout(() => toast.classList.remove('visible'), 2100);
 }
 
+// Quita la selección cuando el clic cae en el vacío del visor.
+function deselectBone() {
+  if (!state.selectedBone) return;
+  if (previousHighlighted) {
+    const oldMaterials = Array.isArray(previousHighlighted.material) ? previousHighlighted.material : [previousHighlighted.material];
+    oldMaterials.forEach((material) => { material.emissive?.set('#000000'); material.emissiveIntensity = 0; });
+  }
+  previousHighlighted = null;
+  state.selectedBone = null;
+  $$('.bone-row').forEach((row) => row.classList.remove('is-selected'));
+}
+
+// El clic sobre el vacío deselecciona, pero solo si fue un clic real:
+// si el puntero se movió (órbita con arrastre) no se toca la selección.
+const selectionClick = { x: 0, y: 0, missed: false };
+
 canvas.addEventListener('pointerdown', (event) => {
   if (beginLightDrag(event)) return;
   const rect = canvas.getBoundingClientRect();
@@ -437,7 +468,20 @@ canvas.addEventListener('pointerdown', (event) => {
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
   const hits = raycaster.intersectObjects(state.modelMeshes.filter((mesh) => mesh.visible), false);
-  if (hits[0]) selectBone(hits[0].object);
+  if (hits[0]) {
+    selectBone(hits[0].object);
+    selectionClick.missed = false;
+  } else {
+    selectionClick.missed = true;
+    selectionClick.x = event.clientX;
+    selectionClick.y = event.clientY;
+  }
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (!selectionClick.missed) return;
+  const moved = Math.hypot(event.clientX - selectionClick.x, event.clientY - selectionClick.y);
+  if (moved < 6) deselectBone();
 });
 
 // --- Arrastre de fuentes de luz en el visor ---
@@ -607,6 +651,8 @@ $('#bg-custom-color').addEventListener('input', (event) => {
 $('#show-all-bones').addEventListener('click', () => {
   state.modelMeshes.forEach((mesh) => { mesh.visible = true; });
   $$('.bone-row').forEach((row) => row.classList.remove('is-hidden'));
+  if (state.jawVariant !== 'full') setJawVariant(state.jawVariant); // "Mostrar todas" respeta la variante
+  updateMeshCount();
 });
 $('#ambient').addEventListener('input', (event) => {
   state.envIntensity = Number(event.target.value) / 100;
@@ -901,6 +947,30 @@ $$('.material-chip').forEach((button) => button.addEventListener('click', () => 
   $$('.material-chip').forEach((item) => item.classList.toggle('active', item === button));
   applyMaterial(button.dataset.material);
 }));
+
+// Variante del modelo: completo o sin mandíbula (la mandíbula y los dientes
+// inferiores, cuadrantes 3 y 4 de la notación FDI).
+function isJawPiece(mesh) {
+  const name = mesh.userData.displayName || '';
+  return name === 'Mandíbula' || /^Diente [34]\./.test(name);
+}
+
+function setJawVariant(variant) {
+  state.jawVariant = variant;
+  const show = variant === 'full';
+  state.modelMeshes.forEach((mesh) => { if (isJawPiece(mesh)) mesh.visible = show; });
+  $('#jaw-value').textContent = show ? 'Completo' : 'Sin mandíbula';
+  $$('.variant-chip').forEach((chip) => chip.classList.toggle('active', chip.dataset.jaw === variant));
+  $$('.bone-row').forEach((row) => {
+    const name = row.querySelector('.bone-name')?.textContent || '';
+    const jawRow = name === 'Mandíbula' || /^Diente [34]\./.test(name);
+    row.classList.toggle('is-variant-off', jawRow && !show);
+  });
+  if (!show && state.selectedBone && isJawPiece(state.selectedBone)) deselectBone();
+  updateMeshCount();
+}
+
+$$('.variant-chip').forEach((chip) => chip.addEventListener('click', () => setJawVariant(chip.dataset.jaw)));
 
 // --- Exportación de la pose como PNG con fondo transparente ---
 $('#export-pose').addEventListener('click', () => {
