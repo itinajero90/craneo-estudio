@@ -342,7 +342,7 @@ function updateLight(lightState, { recreate = false } = {}) {
 
 function loadModel() {
   const loader = new GLTFLoader();
-  loader.load('/models/coretti-skull.glb', (gltf) => {
+  loader.load('./models/coretti-skull.glb', (gltf) => {
     gltf.scene.updateMatrixWorld(true);
     const modelGroup = new THREE.Group();
     modelGroup.name = 'skull-study-model';
@@ -888,7 +888,7 @@ function makeWoodTexture() {
 let boneTexture = null;
 function getBoneTexture() {
   if (!boneTexture) {
-    boneTexture = new THREE.TextureLoader().load('/textures/bone_diffuse_soft.jpg');
+    boneTexture = new THREE.TextureLoader().load('./textures/bone_diffuse_soft.jpg');
     boneTexture.wrapS = boneTexture.wrapT = THREE.RepeatWrapping;
     boneTexture.colorSpace = THREE.SRGBColorSpace;
     boneTexture.repeat.set(1.5, 1.5);
