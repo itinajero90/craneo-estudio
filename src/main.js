@@ -153,7 +153,7 @@ root.innerHTML = `
       <div class="sketch-bottom"><span>LIENZO DIGITAL</span><span>ARCHIVO · 01</span></div>
     </aside>
   </main>
-  <footer class="app-footer"><span>OSSO · HERRAMIENTA DE DIBUJO Y OBSERVACIÓN</span><a href="#credits">CRÉDITOS DEL MODELO ↗</a><span>VERSIÓN DE ESTUDIO 0.1</span></footer>
+  <footer class="app-footer"><span>OSSO · HERRAMIENTA DE DIBUJO Y OBSERVACIÓN</span><a href="#credits">CRÉDITOS DEL MODELO ↗</a><span>VERSIÓN DE ESTUDIO ${__APP_VERSION__}</span></footer>
   <dialog id="credits-dialog" class="credits-dialog"><button class="close-dialog" id="close-credits" aria-label="Cerrar">×</button><div class="eyebrow">FUENTES Y LICENCIAS</div><h2>Créditos del modelo</h2><p>Modelo anatómico: “High quality skull”, creado por Mariano Coretti como parte de su tesis de odontología “Study and implementation of a decomposable virtual skull in 54 anatomically correct elements”. Atribución solicitada: “Created by Mariano Coretti.” Licencia: Creative Commons Attribution 3.0 (CC BY 3.0).</p><p>Adaptación en esta aplicación: exportación a GLB para el visor, selección individual de sus 53 piezas incluidas y traducción de los nombres anatómicos al español.</p><a href="https://blenderartists.org/t/high-quality-skull-free-asset-download/1100360" target="_blank" rel="noreferrer">Fuente y atribución ↗</a><a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">Texto de la licencia ↗</a><p class="credit-small">La interfaz y el código de OSSO son independientes del modelo anatómico.</p></dialog>
 `;
 
@@ -1315,7 +1315,7 @@ checkForUpdates();
 setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
 
 // Muestra la versión real de la app en el pie (dentro del .exe);
-// en el navegador se queda el texto por defecto del HTML.
+// en el navegador se queda la versión fijada al compilar la web.
 async function syncAppVersion() {
   if (!('__TAURI_INTERNALS__' in window)) return;
   try {
