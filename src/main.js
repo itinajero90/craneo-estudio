@@ -25,11 +25,17 @@ const translations = {
   Zigomatico: 'Cigomático',
 };
 const skullPattern = /^(?:\d\.[1-8]|Cornetto_inf|Etmoide|Frontale|Lacrimale|Mandibola|Mascella|Nasale|Occipitale|Palatino|Parietale|Sfenoide|Temporale|Vomere|Zigomatico)(?:_(?:DX|SX))?$/i;
+// Esquema de estudio: la principal modela el volumen y el relleno solo levanta las
+// sombras (mucho más débil y sin sombra propia, como una fuente grande y difusa),
+// con tonos casi neutros para no teñir el hueso.
+const defaultLights = () => [
+  { id: 'key', name: 'Luz principal', type: 'directional', color: '#ffe3c8', intensity: 3.2, x: -2.8, y: 3.2, z: -3.2, enabled: true, shadow: true },
+  { id: 'fill', name: 'Luz de relleno', type: 'point', color: '#ebf0ff', intensity: 7, x: 3, y: 0.8, z: -2.5, enabled: true, shadow: false },
+];
+const DEFAULT_AMBIENT = 0.62;
+const LIGHT_MODEL = 2; // perfiles guardados antes de la caída física no llevan este valor
 const state = {
-  lights: [
-    { id: 'key', name: 'Luz principal', type: 'directional', color: '#ffd7a1', intensity: 2.25, x: -2.5, y: 3.1, z: -3.4, enabled: true, shadow: true },
-    { id: 'fill', name: 'Luz de relleno', type: 'point', color: '#b5d8ff', intensity: 26, x: 2.8, y: 0.6, z: -1.4, enabled: true, shadow: false },
-  ],
+  lights: defaultLights(),
   selectedLight: 'key',
   selectedBone: null,
   modelMeshes: [],
@@ -39,7 +45,7 @@ const state = {
   renderer: null,
   scene: null,
   helpers: new Map(),
-  envIntensity: 0.62,
+  envIntensity: DEFAULT_AMBIENT,
   woodTint: '#ffffff',
   jawVariant: 'full',
 };
@@ -98,7 +104,7 @@ root.innerHTML = `
         <div class="panel-heading"><div><span class="section-index">02</span><h2>Iluminación</h2></div><button class="add-button" id="add-light" title="Añadir fuente de luz">+ Añadir</button></div>
         <div class="light-list" id="light-list"></div>
         <div class="selected-light" id="selected-light"></div>
-        <div class="range-group ambient"><label for="ambient">Luz ambiente <output id="ambient-value">62%</output></label><input id="ambient" type="range" min="0" max="120" value="62" /></div>
+        <div class="range-group ambient"><label for="ambient">Luz ambiente <output id="ambient-value">${Math.round(DEFAULT_AMBIENT * 100)}%</output></label><input id="ambient" type="range" min="0" max="120" value="${Math.round(DEFAULT_AMBIENT * 100)}" /></div>
         <p class="panel-note">Las fuentes se proyectan sobre el modelo. Activa sombras en la luz que quieras usar como principal.</p>
       </section>
 
@@ -177,9 +183,12 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true,
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+// Las sombras solo dependen de luces y modelo, no de la cámara: se recalculan al
+// cambiar algo de eso (ver refreshShadows), así orbitar sigue siendo fluido.
+renderer.shadowMap.autoUpdate = false;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.12;
+renderer.toneMapping = THREE.AgXToneMapping;
+renderer.toneMappingExposure = 1.3;
 state.renderer = renderer;
 
 const controls = new OrbitControls(camera, canvas);
@@ -190,8 +199,26 @@ controls.maxDistance = 9;
 controls.target.set(0, 0, 0);
 state.controls = controls;
 
-const hemisphere = new THREE.HemisphereLight('#fff7e8', '#4a4950', state.envIntensity);
+const hemisphere = new THREE.HemisphereLight('#fff7e8', '#4a4950', 0);
 scene.add(hemisphere);
+// Parte de la luz ambiente llega desde varias direcciones con sombra: así las cuencas,
+// la cavidad nasal y las suturas quedan más oscuras, como bajo una luz de ambiente real.
+const occlusionLights = [[0, 1, 0.1], [0.65, 0.85, -0.5], [-0.65, 0.85, -0.5], [0, 0.8, 0.75]].map(([x, y, z]) => {
+  const light = new THREE.DirectionalLight('#fff7ee', 0);
+  light.position.set(x, y, z).setLength(7);
+  light.castShadow = true;
+  configureShadow(light, 1024);
+  light.shadow.radius = 8;
+  light.shadow.intensity = 0.7;
+  scene.add(light);
+  return light;
+});
+function setAmbient(value) {
+  state.envIntensity = value;
+  hemisphere.intensity = value * 0.35;
+  occlusionLights.forEach((light) => { light.intensity = value * 0.2; });
+}
+setAmbient(state.envIntensity);
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.ShadowMaterial({ color: '#36312c', opacity: 0.22 }));
 floor.rotation.x = -Math.PI / 2;
 floor.position.y = -1.24;
@@ -263,12 +290,27 @@ function copyWorldMesh(mesh, group, sourceName = skullNodeName(mesh)) {
   return clone;
 }
 
+// Sombras de borde suave ajustadas al tamaño del cráneo.
+function configureShadow(light, size = 2048) {
+  light.shadow.mapSize.set(size, size);
+  const shadowCamera = light.shadow.camera;
+  shadowCamera.near = 0.1;
+  shadowCamera.far = 20;
+  if (light.isDirectionalLight) {
+    shadowCamera.left = shadowCamera.bottom = -3.2;
+    shadowCamera.right = shadowCamera.top = 3.2;
+  }
+  light.shadow.bias = -0.0002;
+  light.shadow.normalBias = 0.012;
+  light.shadow.radius = 3;
+}
+
 function addLight(lightState) {
   let light;
   if (lightState.type === 'point') {
-    light = new THREE.PointLight(lightState.color, lightState.intensity, 0, 1.55);
+    light = new THREE.PointLight(lightState.color, lightState.intensity, 0, lightDecay.point);
   } else if (lightState.type === 'spot') {
-    light = new THREE.SpotLight(lightState.color, lightState.intensity, 0, Math.PI / 3.2, 0.32, 1.4);
+    light = new THREE.SpotLight(lightState.color, lightState.intensity, 0, Math.PI / 3.2, 0.6, lightDecay.spot);
     light.target.position.set(0, 0, 0);
     scene.add(light.target);
   } else {
@@ -277,11 +319,8 @@ function addLight(lightState) {
     scene.add(light.target);
   }
   light.position.set(lightState.x, lightState.y, lightState.z);
-  light.castShadow = lightState.shadow && lightState.type !== 'point';
-  light.shadow.mapSize.set(1024, 1024);
-  light.shadow.camera.near = 0.1;
-  light.shadow.camera.far = 15;
-  light.shadow.bias = -0.0003;
+  light.castShadow = Boolean(lightState.shadow);
+  configureShadow(light, lightState.type === 'point' ? 1024 : 2048);
   scene.add(light);
   const marker = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), new THREE.MeshBasicMaterial({ color: lightState.color }));
   marker.position.copy(light.position);
@@ -297,12 +336,13 @@ function addLight(lightState) {
   marker.visible = lightState.enabled && $('#toggle-lights').getAttribute('aria-pressed') === 'true';
 }
 
-// Escala de intensidad por tipo: direccional no se atenúa; puntual/foco usan caída
-// física (candelas). Estos factores igualan el brillo percibido a ~3.5 unidades
-// del cráneo para que al cambiar de tipo la luz no cambie de fuerza de golpe.
-const lightDecay = { point: 1.55, spot: 1.4 };
+// Escala de intensidad por tipo: direccional no se atenúa; puntual/foco caen con el
+// cuadrado de la distancia, como una luz real. Estos factores igualan el brillo
+// percibido a ~3.5 unidades del cráneo para que al cambiar de tipo no salte la fuerza.
+const lightDecay = { point: 2, spot: 2 };
+const legacyLightDecay = { point: 1.55, spot: 1.4 };
 const lightRefDistance = 3.5;
-const lightMaxIntensity = (type) => (type === 'directional' ? 5 : 80);
+const lightMaxIntensity = (type) => (type === 'directional' ? 5 : 150);
 
 function apparentIntensity(intensity, type) {
   return type === 'directional' ? intensity : intensity / Math.pow(lightRefDistance, lightDecay[type]);
@@ -336,7 +376,7 @@ function updateLight(lightState, { recreate = false } = {}) {
   light.intensity = lightState.intensity;
   light.position.set(lightState.x, lightState.y, lightState.z);
   light.visible = lightState.enabled;
-  light.castShadow = Boolean(lightState.shadow) && lightState.type !== 'point';
+  light.castShadow = Boolean(lightState.shadow);
   helper.marker.position.copy(light.position);
   helper.marker.visible = lightState.enabled && $('#toggle-lights').getAttribute('aria-pressed') === 'true';
 }
@@ -394,9 +434,22 @@ function loadModel() {
 }
 loadModel();
 
+let lastShadowSignature = null;
+function refreshShadows() {
+  const parts = [];
+  if (state.modelRoot) parts.push(state.modelRoot.rotation.toArray().join(), state.modelMeshes.map((mesh) => (mesh.visible ? 1 : 0)).join(''));
+  state.helpers.forEach(({ light }, id) => parts.push(id, light.type, light.visible, light.castShadow, light.position.toArray().join()));
+  const signature = parts.join('|');
+  if (signature !== lastShadowSignature) {
+    lastShadowSignature = signature;
+    renderer.shadowMap.needsUpdate = true;
+  }
+}
+
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+  refreshShadows();
   renderer.render(scene, camera);
 }
 animate();
@@ -665,8 +718,7 @@ $('#show-all-bones').addEventListener('click', () => {
   updateMeshCount();
 });
 $('#ambient').addEventListener('input', (event) => {
-  state.envIntensity = Number(event.target.value) / 100;
-  hemisphere.intensity = state.envIntensity;
+  setAmbient(Number(event.target.value) / 100);
   $('#ambient-value').textContent = `${event.target.value}%`;
 });
 
@@ -762,7 +814,7 @@ function renderSelectedLight() {
     <div class="range-group"><label for="light-intensity">Intensidad <output id="light-intensity-value">${Math.round(light.intensity * 10) / 10}</output></label><input id="light-intensity" type="range" min="0" max="${lightMaxIntensity(light.type)}" step="0.1" value="${Math.min(light.intensity, lightMaxIntensity(light.type))}" /></div>
     <div class="position-heading"><span>POSICIÓN / DIRECCIÓN</span><span>X · Y · Z</span></div>
     <div class="coordinate-row"><label>X <input id="light-x" type="number" min="-6" max="6" step="0.1" value="${light.x}" /></label><label>Y <input id="light-y" type="number" min="-6" max="6" step="0.1" value="${light.y}" /></label><label>Z <input id="light-z" type="number" min="-6" max="6" step="0.1" value="${light.z}" /></label></div>
-    <label class="shadow-toggle"><input id="light-shadow" type="checkbox" ${light.shadow ? 'checked' : ''} ${light.type === 'point' ? 'disabled' : ''}/><span class="checkmark"></span><span>Proyectar sombras</span><span class="shadow-cost">${light.type === 'point' ? 'No disponible' : 'Más rendimiento'}</span></label>
+    <label class="shadow-toggle"><input id="light-shadow" type="checkbox" ${light.shadow ? 'checked' : ''}/><span class="checkmark"></span><span>Proyectar sombras</span></label>
   `;
   $('#light-type').addEventListener('change', (event) => {
     const previousType = light.type;
@@ -771,7 +823,6 @@ function renderSelectedLight() {
     // Reescalar la intensidad para conservar el brillo percibido al cambiar de tipo.
     light.intensity = convertIntensity(light.intensity, previousType, nextType);
     light.type = nextType;
-    if (nextType === 'point') light.shadow = false;
     updateLight(light, { recreate: true });
     renderLights();
   });
@@ -823,7 +874,7 @@ function renderSelectedLight() {
 $('#add-light').addEventListener('click', () => {
   if (state.lights.length >= 5) { toast('Puedes usar hasta cinco fuentes a la vez.'); return; }
   const index = state.lights.length + 1;
-  const light = { id: `light-${Date.now()}`, name: `Luz nueva ${index - 2 > 0 ? index - 2 : ''}`.trim(), type: 'spot', color: '#f2e1c1', intensity: 12, x: -2, y: 1.7, z: 2.2, enabled: true, shadow: true };
+  const light = { id: `light-${Date.now()}`, name: `Luz nueva ${index - 2 > 0 ? index - 2 : ''}`.trim(), type: 'spot', color: '#f2e1c1', intensity: 25, x: -2, y: 1.7, z: 2.2, enabled: true, shadow: true };
   state.lights.push(light); state.selectedLight = light.id; addLight(light); renderLights();
 });
 function toast(message) {
@@ -904,7 +955,7 @@ function presetMaterialFor(mesh, preset) {
   if (mesh.userData.presetMaterials[preset]) return mesh.userData.presetMaterials[preset];
   let material;
   if (preset === 'bone') {
-    material = new THREE.MeshStandardMaterial({ map: getBoneTexture(), color: '#f7f1e3', roughness: 0.6, metalness: 0 });
+    material = new THREE.MeshStandardMaterial({ map: getBoneTexture(), color: '#f5e9d2', roughness: 0.78, metalness: 0 });
   } else if (preset === 'metal') {
     material = new THREE.MeshStandardMaterial({ color: '#d8dbe0', metalness: 1, roughness: 0.28, envMapIntensity: 1.1 });
   } else if (preset === 'glass') {
@@ -1107,13 +1158,10 @@ $('#save-sketch').addEventListener('click', () => {
 });
 $('#reset-all').addEventListener('click', () => {
   $('#reset-model').click();
-  state.lights = [
-    { id: 'key', name: 'Luz principal', type: 'directional', color: '#ffd7a1', intensity: 2.25, x: -2.5, y: 3.1, z: -3.4, enabled: true, shadow: true },
-    { id: 'fill', name: 'Luz de relleno', type: 'point', color: '#b5d8ff', intensity: 26, x: 2.8, y: 0.6, z: -1.4, enabled: true, shadow: false },
-  ];
+  state.lights = defaultLights();
   [...state.helpers.keys()].forEach((id) => { const helper = state.helpers.get(id); scene.remove(helper.light, helper.marker); if (helper.light.target) scene.remove(helper.light.target); state.helpers.delete(id); });
   state.selectedLight = 'key'; state.lights.forEach(addLight); renderLights();
-  state.envIntensity = 0.62; hemisphere.intensity = 0.62; $('#ambient').value = '62'; $('#ambient-value').textContent = '62%';
+  setAmbient(DEFAULT_AMBIENT); $('#ambient').value = String(Math.round(DEFAULT_AMBIENT * 100)); $('#ambient-value').textContent = `${Math.round(DEFAULT_AMBIENT * 100)}%`;
   state.grid.visible = true; $('#toggle-grid').setAttribute('aria-pressed', 'true');
   $$('.bg-swatch').forEach((item, id) => item.classList.toggle('active', id === 0));
   $('#bg-custom-color').value = '#d7d2c8';
@@ -1151,6 +1199,7 @@ function captureProfile(name) {
     jawVariant: state.jawVariant,
     background: background ? `#${background.getHexString()}` : '#d7d2c8',
     ambient: state.envIntensity,
+    lightModel: LIGHT_MODEL,
     selectedLight: state.selectedLight,
     lights: JSON.parse(JSON.stringify(state.lights)),
   };
@@ -1187,8 +1236,7 @@ function loadProfile(profile) {
   setBackground(background);
   // Luz ambiente
   const ambient = Math.round((Number(profile.ambient) || 0) * 100);
-  state.envIntensity = ambient / 100;
-  hemisphere.intensity = state.envIntensity;
+  setAmbient(ambient / 100);
   $('#ambient').value = String(ambient);
   $('#ambient-value').textContent = `${ambient}%`;
   // Fuentes de luz: se retiran las actuales y se recrean desde el perfil
@@ -1199,8 +1247,13 @@ function loadProfile(profile) {
     state.helpers.delete(id);
   });
   state.lights = JSON.parse(JSON.stringify(Array.isArray(profile.lights) && profile.lights.length ? profile.lights : []));
-  if (!state.lights.length) {
-    state.lights = [{ id: 'key', name: 'Luz principal', type: 'directional', color: '#ffd7a1', intensity: 2.25, x: -2.5, y: 3.1, z: -3.4, enabled: true, shadow: true }];
+  if (!state.lights.length) state.lights = [defaultLights()[0]];
+  // Perfiles antiguos: misma fuerza percibida a la distancia de referencia con la caída nueva.
+  if (profile.lightModel !== LIGHT_MODEL) {
+    state.lights.forEach((light) => {
+      const legacy = legacyLightDecay[light.type];
+      if (legacy) light.intensity = Math.min(lightMaxIntensity(light.type), Math.round(light.intensity * Math.pow(lightRefDistance, lightDecay[light.type] - legacy) * 10) / 10);
+    });
   }
   state.selectedLight = state.lights.some((light) => light.id === profile.selectedLight) ? profile.selectedLight : state.lights[0].id;
   state.lights.forEach(addLight);
