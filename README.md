@@ -29,7 +29,16 @@ npm run build   # generar build de produccion en dist/
 npm run preview # servir el build en local
 ```
 
-Para publicar en un hosting: sube la carpeta `dist/` (ya usa rutas relativas, sirve en cualquier subcarpeta).
+Para publicar en **Vercel** (gratis, sin dominio propio): crea el proyecto en [vercel.com](https://vercel.com) importando este repo (detecta Vite solo) y cada `git push` a `main` redespliega la web. La URL queda `https://craneo-studio.vercel.app`.
+
+- **Descarga del .exe:** botón *Descargar app* en la barra superior (solo aparece en la web). El instalador **no** vive en el repo: se guarda en **Vercel Blob** (almacén de archivos de Vercel, también gratis) y `vercel.json` redirige `/craneo-studio-setup.exe` hacia él. Así el repo sigue privado y el instalador no infla los builds.
+- **Actualizador:** `https://craneo-studio.vercel.app/latest.json` (se regenera en cada release).
+
+**Configuración necesaria una sola vez:** crear el Blob Store en Vercel (Storage → Create Blob) y guardar el token en `.env.local` (archivo ignorado por git):
+
+```
+BLOB_READ_WRITE_TOKEN=tu_token_aqui
+```
 
 ### Opción B — App de escritorio (.exe) para Windows
 
@@ -44,7 +53,16 @@ Para publicar en un hosting: sube la carpeta `dist/` (ya usa rutas relativas, si
 - Se instala en `%LOCALAPPDATA%\craneo-studio` (sin pedir permisos de administrador).
 - **Para desinstalar:** Ajustes → Aplicaciones → *craneo-studio* → Desinstalar, o ejecuta `uninstall.exe` en esa carpeta.
 
-**Actualizaciones:** al abrir la app, si hay una versión más nueva aparece un aviso abajo a la derecha con la versión nueva. Pulsa **Actualizar** → se descarga con porcentaje de progreso → se instala sola → la app se reinicia con la versión nueva.
+**Actualizaciones:** al abrir la app, si hay una versión más nueva aparece un aviso abajo a la derecha con la versión nueva. Pulsa **Actualizar** → se descarga con porcentaje de progreso → se instala sola → la app se reinicia con la versión nueva. El aviso mira `https://craneo-studio.vercel.app/latest.json` (publicado con cada release).
+
+**Publicar una versión nueva** (una sola orden):
+
+```bash
+# 1. sube el cambio de versión en src-tauri/tauri.conf.json y package.json
+npm run publish-update -- "notas de la version"
+# compila, firma, sube el .exe a Vercel Blob, regenera public/latest.json
+# y hace push -> Vercel redespliega -> los usuarios reciben el aviso al abrir la app
+```
 
 **Compilar tu propio `.exe`** (opcional, para desarrollar):
 

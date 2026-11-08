@@ -60,7 +60,6 @@
       "endpoints": [
         "https://craneo-studio.vercel.app/latest.json"
       ],
-      "dangerousInsecureTransportProtocol": true,
       "windows": {
         "installMode": "passive"
       }

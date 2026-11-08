@@ -52,6 +52,7 @@ root.innerHTML = `
     </a>
     <div class="topbar-center"><span class="live-dot"></span> ESTUDIO DE CRÁNEO <span class="topbar-slash">/</span> MODELO 3D</div>
     <div class="topbar-actions">
+      <a class="quiet-button download-app" id="download-app" href="./craneo-studio-setup.exe" download hidden>Descargar app ⬇</a>
       <button class="quiet-button" id="reset-all" title="Restaurar el espacio">Restaurar</button>
       <button class="accent-button" id="save-sketch">Guardar dibujo <span aria-hidden="true">↗</span></button>
     </div>
@@ -1327,3 +1328,18 @@ async function syncAppVersion() {
   }
 }
 syncAppVersion();
+
+// En la web ofrecemos la descarga del .exe de escritorio;
+// dentro de la propia app ese botón no tiene sentido.
+// La URL se lee de latest.json (misma fuente que el actualizador).
+if (!('__TAURI_INTERNALS__' in window)) {
+  const download = $('#download-app');
+  download.hidden = false;
+  fetch('./latest.json')
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      const url = data?.platforms?.['windows-x86_64']?.url;
+      if (url) download.href = url;
+    })
+    .catch(() => {}); // sin latest.json nos quedamos con el href por defecto
+}

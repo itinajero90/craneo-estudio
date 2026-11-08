@@ -6,3 +6,6 @@ dist/
 Thumbs.db
 src-tauri/target/
 src-tauri/gen/
+
+public/craneo-studio-setup.exe
+.env.local
