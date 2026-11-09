@@ -244,6 +244,8 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .loader-mark { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #c7795b; border-radius: 50%; color: #c7795b; font: 700 20px var(--display); animation: breathe 1.5s ease-in-out infinite; }
 .loading-overlay span { margin-top: 6px; font: 10px var(--mono); letter-spacing: .08em; }
 .loading-overlay small { color: #969187; font: 8px var(--mono); }
+.loading-bar { width: 140px; height: 2px; background: #c7c2b8; }
+.loading-bar i { display: block; width: 0; height: 100%; background: #c7795b; transition: width .15s linear; }
 @keyframes breathe { 50% { transform: scale(.88); opacity: .58; } }
 .model-error { position: absolute; top: 50%; left: 50%; width: min(80%, 360px); padding: 17px; transform: translate(-50%,-50%); border: 1px solid #c88970; background: #f2e8de; color: #623a2d; font-size: 12px; line-height: 1.6; }
 .model-error code { display: block; margin-top: 8px; font: 10px var(--mono); }

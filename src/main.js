@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import './style.css';
@@ -136,7 +137,7 @@ root.innerHTML = `
         <div class="viewport-vignette"></div>
         <div class="viewport-hint"><span class="hint-mouse">⟲</span> ARRASTRA PARA ROTAR <span>·</span> RUEDA PARA ACERCAR</div>
         <div class="axis-widget"><span class="axis-y">Y</span><span class="axis-x">X</span><span class="axis-z">Z</span><i></i></div>
-        <div class="loading-overlay" id="loading-overlay"><div class="loader-mark">O</div><span>Preparando estudio</span><small>Modelo anatómico · GLB</small></div>
+        <div class="loading-overlay" id="loading-overlay"><div class="loader-mark">O</div><span>Preparando estudio</span><small id="loading-detail">Modelo anatómico · GLB</small><div class="loading-bar"><i id="loading-bar"></i></div></div>
         <div class="model-error" id="model-error" hidden>No se pudo cargar el modelo. Revisa que el archivo GLB esté en <code>public/models/</code>.</div>
         <div class="selection-toast" id="selection-toast" aria-live="polite"></div>
       </div>
@@ -383,8 +384,10 @@ function updateLight(lightState, { recreate = false } = {}) {
   helper.marker.visible = lightState.enabled && $('#toggle-lights').getAttribute('aria-pressed') === 'true';
 }
 
+const MODEL_BYTES = 5313092; // tamaño de coretti-skull.glb
+
 function loadModel() {
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   loader.load('./models/coretti-skull.glb', (gltf) => {
     gltf.scene.updateMatrixWorld(true);
     const modelGroup = new THREE.Group();
@@ -427,7 +430,12 @@ function loadModel() {
     const preset = { x: -2.35, y: 0.75, z: -4.5 };
     camera.position.set(preset.x, preset.y, preset.z);
     controls.update();
-  }, undefined, (error) => {
+  }, (event) => {
+    // Con compresión en tránsito el navegador no siempre informa el total.
+    const percent = Math.min(99, Math.round(100 * event.loaded / (event.total || MODEL_BYTES)));
+    $('#loading-bar').style.width = `${percent}%`;
+    $('#loading-detail').textContent = `Modelo anatómico · ${percent}%`;
+  }, (error) => {
     console.error('No se pudo cargar el modelo del cráneo:', error);
     loadingOverlay.classList.add('is-hidden');
     $('#model-error').hidden = false;
