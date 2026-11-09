@@ -152,6 +152,7 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .temp-group input[type="range"] { height: 5px; border: 1px solid #d5d2ca; border-radius: 3px; }
 
 .temp-presets { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.light-presets { margin: 0 0 10px; }
 
 .temp-chip { height: 20px; padding: 0 7px; border: 1px solid #d5d2ca; background: transparent; border-radius: 2px; color: #757770; font: 9px var(--mono); cursor: pointer; }
 

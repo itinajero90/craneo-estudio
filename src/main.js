@@ -35,6 +35,16 @@ const defaultLights = () => [
   { id: 'fill', name: 'Luz de relleno', type: 'point', color: '#ebf0ff', intensity: 7, x: 3, y: 0.8, z: -2.5, enabled: true, shadow: false },
 ];
 const DEFAULT_AMBIENT = 0.62;
+const keyLight = (color, intensity, x, y, z) => ({ id: 'key', name: 'Luz principal', type: 'directional', color, intensity, x, y, z, enabled: true, shadow: true });
+const fillLight = (intensity, x, y, z) => ({ id: 'fill', name: 'Luz de relleno', type: 'point', color: '#ebf0ff', intensity, x, y, z, enabled: true, shadow: false });
+// Esquemas clásicos de dibujo. El cráneo mira a −Z; desde la cámara inicial, −X queda a la derecha.
+const lightPresets = {
+  studio: { label: 'Estudio', ambient: DEFAULT_AMBIENT, lights: defaultLights },
+  rembrandt: { label: 'Rembrandt', ambient: 0.38, lights: () => [keyLight('#ffe3c8', 3.8, -3.2, 3.6, -2.4), fillLight(3, 3, 0.4, -2.8)] },
+  side: { label: 'Lateral', ambient: 0.3, lights: () => [keyLight('#ffe3c8', 3.8, -5, 0.8, -0.2)] },
+  top: { label: 'Cenital', ambient: 0.42, lights: () => [keyLight('#fff1e4', 3.8, 0, 5.5, -0.8), fillLight(2.5, 0, -0.6, -4)] },
+  rim: { label: 'Contraluz', ambient: 0.32, lights: () => [keyLight('#ebf0ff', 5, -1.6, 2.6, 4.6), fillLight(6, 1.5, 0.5, -4)] },
+};
 const LIGHT_MODEL = 2; // perfiles guardados antes de la caída física no llevan este valor
 const state = {
   lights: defaultLights(),
@@ -104,6 +114,7 @@ root.innerHTML = `
 
       <section class="panel lighting-panel">
         <div class="panel-heading"><div><span class="section-index">02</span><h2>Iluminación</h2></div><button class="add-button" id="add-light" title="Añadir fuente de luz">+ Añadir</button></div>
+        <div class="temp-presets light-presets">${Object.entries(lightPresets).map(([id, preset]) => `<button class="temp-chip light-preset" data-light-preset="${id}">${preset.label}</button>`).join('')}</div>
         <div class="light-list" id="light-list"></div>
         <div class="selected-light" id="selected-light"></div>
         <div class="range-group ambient"><label for="ambient">Luz ambiente <output id="ambient-value">${Math.round(DEFAULT_AMBIENT * 100)}%</output></label><input id="ambient" type="range" min="0" max="120" value="${Math.round(DEFAULT_AMBIENT * 100)}" /></div>
@@ -219,6 +230,9 @@ function setAmbient(value) {
   state.envIntensity = value;
   hemisphere.intensity = value * 0.35;
   occlusionLights.forEach((light) => { light.intensity = value * 0.2; });
+  const percent = Math.round(value * 100);
+  $('#ambient').value = String(percent);
+  $('#ambient-value').textContent = `${percent}%`;
 }
 setAmbient(state.envIntensity);
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.ShadowMaterial({ color: '#36312c', opacity: 0.22 }));
@@ -721,7 +735,6 @@ $('#show-all-bones').addEventListener('click', () => {
 });
 $('#ambient').addEventListener('input', (event) => {
   setAmbient(Number(event.target.value) / 100);
-  $('#ambient-value').textContent = `${event.target.value}%`;
 });
 
 // Temperatura de color: convierte Kelvin → hex (aprox. Tanner Helland) y al revés
@@ -1158,12 +1171,31 @@ $('#save-sketch').addEventListener('click', () => {
   context.drawImage(sketchCanvas, 0, 0, exportCanvas.width, exportCanvas.height);
   const anchor = document.createElement('a'); anchor.download = 'osso-boceto-craneo.png'; anchor.href = exportCanvas.toDataURL('image/png'); anchor.click();
 });
+function clearLights() {
+  state.helpers.forEach((helper) => {
+    scene.remove(helper.light, helper.marker);
+    if (helper.light.target) scene.remove(helper.light.target);
+    helper.light.dispose?.(); // libera el mapa de sombras de la GPU
+  });
+  state.helpers.clear();
+}
+function applyLightSetup(lights, ambient) {
+  clearLights();
+  state.lights = lights;
+  state.selectedLight = lights[0].id;
+  lights.forEach(addLight);
+  renderLights();
+  setAmbient(ambient);
+}
+$$('.light-preset').forEach((button) => button.addEventListener('click', () => {
+  if (!state.modelRoot) { toast('El modelo aún no está listo.'); return; }
+  const preset = lightPresets[button.dataset.lightPreset];
+  applyLightSetup(preset.lights(), preset.ambient);
+  toast(`Iluminación: ${preset.label}`);
+}));
 $('#reset-all').addEventListener('click', () => {
   $('#reset-model').click();
-  state.lights = defaultLights();
-  [...state.helpers.keys()].forEach((id) => { const helper = state.helpers.get(id); scene.remove(helper.light, helper.marker); if (helper.light.target) scene.remove(helper.light.target); state.helpers.delete(id); });
-  state.selectedLight = 'key'; state.lights.forEach(addLight); renderLights();
-  setAmbient(DEFAULT_AMBIENT); $('#ambient').value = String(Math.round(DEFAULT_AMBIENT * 100)); $('#ambient-value').textContent = `${Math.round(DEFAULT_AMBIENT * 100)}%`;
+  applyLightSetup(defaultLights(), DEFAULT_AMBIENT);
   state.grid.visible = true; $('#toggle-grid').setAttribute('aria-pressed', 'true');
   $$('.bg-swatch').forEach((item, id) => item.classList.toggle('active', id === 0));
   $('#bg-custom-color').value = '#d7d2c8';
@@ -1238,15 +1270,8 @@ function loadProfile(profile) {
   // Luz ambiente
   const ambient = Math.round((Number(profile.ambient) || 0) * 100);
   setAmbient(ambient / 100);
-  $('#ambient').value = String(ambient);
-  $('#ambient-value').textContent = `${ambient}%`;
   // Fuentes de luz: se retiran las actuales y se recrean desde el perfil
-  [...state.helpers.keys()].forEach((id) => {
-    const helper = state.helpers.get(id);
-    scene.remove(helper.light, helper.marker);
-    if (helper.light.target) scene.remove(helper.light.target);
-    state.helpers.delete(id);
-  });
+  clearLights();
   state.lights = JSON.parse(JSON.stringify(Array.isArray(profile.lights) && profile.lights.length ? profile.lights : []));
   if (!state.lights.length) state.lights = [defaultLights()[0]];
   // Perfiles antiguos: misma fuerza percibida a la distancia de referencia con la caída nueva.
