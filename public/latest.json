@@ -1,11 +1,11 @@
 {
-  "version": "0.2.6",
-  "notes": "Presets de iluminacion y modelo mas liviano",
-  "pub_date": "2026-11-09T01:09:28Z",
-  "sha256": "adb120214f4c418fe02b82d598ab2ec6b9b129660ec7e41261bc039988ed84ed",
+  "version": "0.2.7",
+  "notes": "Actualizacion interna de seguridad de las actualizaciones",
+  "pub_date": "2026-11-09T01:33:32Z",
+  "sha256": "e4066cb28016ecf963f08bb6d586fe00ab444dff9cf7fd87f8c97ddcae44b359",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d2N4Mm0xNDVuQTI1eTlVc1pXM0dOYkJ3eFpRUStqZnpIWlh0M3Q2RjRuQ3E2SXFhUy83TUQzUytjNFBxZ3BTSmJWc2htYUNMVFl0b1VEN3RIaFlDMmdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTg2NTY2CWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuNl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjYKTnRmaWEwWE1jYVdSR2FwQklwVFdoaTJhaW1Pdjhua0xFdXZLQmFad1ZRQkZTRmhBQ2piL0xtN3VoN213M05rdHRoTytaa2g2QVhGcmtJYTh1bEZYRGc9PQo=",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d1U2ZXBadnQyNTJoNXZCZ3RCSXkvSWpOSmRLUEtOMVltZktqTzV6U0NkTTFOWFMwZ3VLR3JJRjRsVng5bFVnNEJRQUhNWDk1TFBZdlV6ZDVrK0xZY1FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTg4MDExCWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuN194NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjcKcFVqL20yTUJnRGhDbHdjUERJY0pGUWhObGpXUVlSdkl3K3d6L0xwWFJPTG1ZVFVFTHQzNmcweEJoNHRPQTl4VDRoQnoycVRsblJBd09SRVBHODh1Qmc9PQo=",
       "url": "https://craneo-studio.vercel.app/craneo-studio-setup.exe"
     }
   }
