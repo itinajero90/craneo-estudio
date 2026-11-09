@@ -1,11 +1,11 @@
 {
-  "version": "0.2.5",
-  "notes": "Mejoras de seguridad en la app y verificacion del instalador",
-  "pub_date": "2026-11-09T00:33:47Z",
-  "sha256": "a44fde04e342d926745ee481a27f8b26abdb42ef1e0cc725dcdc571f1e9b5f57",
+  "version": "0.2.6",
+  "notes": "Presets de iluminacion y modelo mas liviano",
+  "pub_date": "2026-11-09T01:09:28Z",
+  "sha256": "adb120214f4c418fe02b82d598ab2ec6b9b129660ec7e41261bc039988ed84ed",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d1VYK0VNQUdMYjRtYk9Xd1RpN2tTVy9CS1B5WU0zYkZsajlySnBKSVhZemV1ZW1lSnBXK0lPcXpBWXlsY2YzNWlsZzRGQmRKZGptaFhRN1ArRmRqQndBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTg0NDI1CWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuNV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjUKNmZ5Vk5zK1I1YUxMOG5lSmxrSk0rVTQwM1hIVmVySHBnYU5heWNIOVhyRnlCKzBuZ3NoYzZuN0c4MWlldHFleVd0Q1RkUHl6bGk1S1IrRXd2dHNIQlE9PQo=",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d2N4Mm0xNDVuQTI1eTlVc1pXM0dOYkJ3eFpRUStqZnpIWlh0M3Q2RjRuQ3E2SXFhUy83TUQzUytjNFBxZ3BTSmJWc2htYUNMVFl0b1VEN3RIaFlDMmdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTg2NTY2CWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuNl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjYKTnRmaWEwWE1jYVdSR2FwQklwVFdoaTJhaW1Pdjhua0xFdXZLQmFad1ZRQkZTRmhBQ2piL0xtN3VoN213M05rdHRoTytaa2g2QVhGcmtJYTh1bEZYRGc9PQo=",
       "url": "https://craneo-studio.vercel.app/craneo-studio-setup.exe"
     }
   }
