@@ -68,7 +68,7 @@
   "plugins": {
     "updater": {
       "requireSignedVersion": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMxM0MxREQ2RTc5RTU0QzQKUldURVZKN24xaDA4d1RmWURjYWRXR0NKR1hqWDlTZzFvdG1SZ1g4eEdWcHhaOXRySGhwL1VQaUsK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYyNTQwQkFGMTNDRjJBMjIKUldRaUtzOFRyd3RVWXZ6aS92Z29yZ0g4Tncvdk1jNkJDWkhqR3N4MGdtakpvRk8ycUdMQi96WGQK",
       "endpoints": [
         "https://craneo-studio.vercel.app/latest.json"
       ],

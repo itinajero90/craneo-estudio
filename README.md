@@ -65,7 +65,11 @@ npm run publish-update -- "notas de la version"
 # y hace push -> Vercel redespliega -> los usuarios reciben el aviso al abrir la app
 ```
 
-El script se niega a publicar si no estás en `main`, hay otros cambios sin commit, `main` está atrás de GitHub o la versión no es mayor que la publicada. Si la clave de firma tiene contraseña, defínela antes en `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+El script se niega a publicar si no estás en `main`, hay otros cambios sin commit, `main` está atrás de GitHub o la versión no es mayor que la publicada. También exige la contraseña de la clave de firma (`~/.tauri/craneo-studio-v2.key`) en la variable `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, solo en esa terminal:
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Contrasena' -AsSecureString)).Password
+```
 
 **Compilar tu propio `.exe`** (opcional, para desarrollar):
 

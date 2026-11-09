@@ -40,7 +40,8 @@ function readToken() {
 
 const conf = JSON.parse(readFileSync(join(root, 'src-tauri', 'tauri.conf.json'), 'utf8'));
 const version = conf.version;
-const keyPath = join(homedir(), '.tauri', 'craneo-studio.key');
+// CRANEO_SIGNING_KEY solo existe para firmar con otra clave durante un cambio de clave.
+const keyPath = process.env.CRANEO_SIGNING_KEY || join(homedir(), '.tauri', 'craneo-studio-v2.key');
 const token = readToken();
 
 function abort(message) {
@@ -69,6 +70,7 @@ async function preflight() {
   if (Number(git('rev-list --count HEAD..origin/main'))) abort('tu main está atrás de origin/main');
 
   if (!existsSync(keyPath)) abort(`no se encontró la clave de firma en ${keyPath}`);
+  if (!process.env.CRANEO_SIGNING_KEY && !process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD) abort('falta la contraseña de la clave en TAURI_SIGNING_PRIVATE_KEY_PASSWORD');
   if (!token) abort('falta BLOB_READ_WRITE_TOKEN en .env.local (Vercel → Storage → Blob)');
 
   let live;
@@ -79,7 +81,6 @@ async function preflight() {
   }
   const published = parse(String(live.version));
   if (!published || !isNewer(current, published)) abort(`la versión ${version} no es mayor que la publicada (${live.version})`);
-  if (!process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD) console.warn('Aviso: se firma sin contraseña (TAURI_SIGNING_PRIVATE_KEY_PASSWORD vacía).');
 }
 
 await preflight();
