@@ -1,10 +1,11 @@
 {
-  "version": "0.2.4",
-  "notes": "Iluminacion mas natural: sombras suaves, cavidades oscuras y luz de estudio",
-  "pub_date": "2026-11-08T23:48:34Z",
+  "version": "0.2.5",
+  "notes": "Mejoras de seguridad en la app y verificacion del instalador",
+  "pub_date": "2026-11-09T00:33:47Z",
+  "sha256": "a44fde04e342d926745ee481a27f8b26abdb42ef1e0cc725dcdc571f1e9b5f57",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d1dqb1NuVHNtZG1zVHJ3aWF4RTlBbVdhdUtOa2k5UTQxZ0x2aklYMFduZ2dlSEhZUE5Oc2JxVjN0UU8rdnlScGV3ZXBTR1pNcGkvSk9ITTVEdWVjU0EwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTgxNzEyCWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuNF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjQKRVMyMlp5Qmsxa2lIdFZvUVVBbDZnaGpQK3FxbmpkMTZ5UzV1VnVUWXVVWkpNN2xVSHpBaHBkL28xbjJUTFYvZ0VqUmppRWxCcThkZlB5WTVScnAzQUE9PQo=",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURVZKN24xaDA4d1VYK0VNQUdMYjRtYk9Xd1RpN2tTVy9CS1B5WU0zYkZsajlySnBKSVhZemV1ZW1lSnBXK0lPcXpBWXlsY2YzNWlsZzRGQmRKZGptaFhRN1ArRmRqQndBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTg0NDI1CWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuNV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjUKNmZ5Vk5zK1I1YUxMOG5lSmxrSk0rVTQwM1hIVmVySHBnYU5heWNIOVhyRnlCKzBuZ3NoYzZuN0c4MWlldHFleVd0Q1RkUHl6bGk1S1IrRXd2dHNIQlE9PQo=",
       "url": "https://craneo-studio.vercel.app/craneo-studio-setup.exe"
     }
   }
