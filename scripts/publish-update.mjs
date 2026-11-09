@@ -13,6 +13,7 @@
 // en dist/ y Tauri lo empaquetaría dentro del propio instalador (crecería
 // +15 MB en cada release).
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -39,7 +40,49 @@ function readToken() {
 
 const conf = JSON.parse(readFileSync(join(root, 'src-tauri', 'tauri.conf.json'), 'utf8'));
 const version = conf.version;
+const keyPath = join(homedir(), '.tauri', 'craneo-studio.key');
+const token = readToken();
 
+function abort(message) {
+  console.error(`\nNo se publicó: ${message}\n`);
+  process.exit(1);
+}
+
+// Protecciones: nada se compila ni se sube si algo de esto falla.
+async function preflight() {
+  // trimEnd: en `status --porcelain` el espacio inicial forma parte de la columna de estado.
+  const git = (args) => execSync(`git ${args}`, { cwd: root, encoding: 'utf8' }).trimEnd();
+  const parse = (value) => (/^\d+\.\d+\.\d+$/.test(value) ? value.split('.').map(Number) : null);
+  const isNewer = (a, b) => { const i = a.findIndex((n, index) => n !== b[index]); return i !== -1 && a[i] > b[i]; };
+
+  const current = parse(version);
+  if (!current) abort(`versión inválida en tauri.conf.json: "${version}"`);
+  const packageVersion = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
+  if (packageVersion !== version) abort(`package.json (${packageVersion}) y tauri.conf.json (${version}) no coinciden`);
+
+  const branch = git('branch --show-current');
+  if (branch !== 'main') abort(`hay que publicar desde main y estás en "${branch}"`);
+  const versionFiles = ['package.json', 'src-tauri/tauri.conf.json'];
+  const dirty = git('status --porcelain --untracked-files=no').split('\n').filter(Boolean).map((line) => line.slice(3)).filter((file) => !versionFiles.includes(file));
+  if (dirty.length) abort(`hay cambios sin commit: ${dirty.join(', ')}`);
+  git('fetch origin main');
+  if (Number(git('rev-list --count HEAD..origin/main'))) abort('tu main está atrás de origin/main');
+
+  if (!existsSync(keyPath)) abort(`no se encontró la clave de firma en ${keyPath}`);
+  if (!token) abort('falta BLOB_READ_WRITE_TOKEN en .env.local (Vercel → Storage → Blob)');
+
+  let live;
+  try {
+    live = await (await fetch(`${DOWNLOAD_URL.replace(FILE_NAME, 'latest.json')}?t=${Date.now()}`)).json();
+  } catch (error) {
+    abort(`no se pudo leer la versión publicada: ${error.message}`);
+  }
+  const published = parse(String(live.version));
+  if (!published || !isNewer(current, published)) abort(`la versión ${version} no es mayor que la publicada (${live.version})`);
+  if (!process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD) console.warn('Aviso: se firma sin contraseña (TAURI_SIGNING_PRIVATE_KEY_PASSWORD vacía).');
+}
+
+await preflight();
 console.log(`\n=== Publicando craneo-studio v${version} ===\n`);
 
 // 1) Build firmado (la clave privada NUNCA se sube a git)
@@ -47,8 +90,8 @@ console.log('-> Compilando y firmando con Tauri...');
 run('npx tauri build', {
   env: {
     ...process.env,
-    TAURI_SIGNING_PRIVATE_KEY: join(homedir(), '.tauri', 'craneo-studio.key'),
-    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: '',
+    TAURI_SIGNING_PRIVATE_KEY: keyPath,
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ?? '',
   },
 });
 
@@ -60,14 +103,6 @@ if (!existsSync(setupPath) || !existsSync(sigPath)) {
 }
 
 // 2) Subir el instalador a Vercel Blob (queda fuera del repo)
-const token = readToken();
-if (!token) {
-  console.error('\nFalta BLOB_READ_WRITE_TOKEN.');
-  console.error('Crea el Blob Store en vercel.com y pega el token en .env.local:');
-  console.error('  BLOB_READ_WRITE_TOKEN=tu_token\n');
-  process.exit(1);
-}
-
 console.log('-> Subiendo el instalador a Vercel Blob...');
 const blob = await put(FILE_NAME, readFileSync(setupPath), {
   access: 'public',
@@ -98,6 +133,8 @@ const latest = {
   version,
   notes: process.argv[2] || `Versión ${version} de OSSO · Craneo Studio.`,
   pub_date: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+  // Huella del instalador: vive en el despliegue, separada del Blob, y permite detectar un .exe reemplazado.
+  sha256: createHash('sha256').update(readFileSync(setupPath)).digest('hex'),
   platforms: { 'windows-x86_64': { signature, url: DOWNLOAD_URL } },
 };
 writeFileSync(join(root, 'public', 'latest.json'), `${JSON.stringify(latest, null, 2)}\n`);

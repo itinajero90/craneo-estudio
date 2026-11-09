@@ -33,6 +33,7 @@ Para publicar en **Vercel** (gratis, sin dominio propio): crea el proyecto en [v
 
 - **Descarga del .exe:** botón *Descargar app* en la barra superior (solo aparece en la web). El instalador **no** vive en el repo: se guarda en **Vercel Blob** (almacén de archivos de Vercel, también gratis) y `vercel.json` redirige `/craneo-studio-setup.exe` hacia él. Así el repo sigue privado y el instalador no infla los builds.
 - **Actualizador:** `https://craneo-studio.vercel.app/latest.json` (se regenera en cada release).
+- **Verificar la descarga:** el campo `sha256` de `latest.json` debe coincidir con `Get-FileHash .\craneo-studio-setup.exe -Algorithm SHA256` (también aparece al pasar el ratón sobre *Descargar app*). La app comprueba la firma por su cuenta al actualizarse.
 
 **Configuración necesaria una sola vez:** crear el Blob Store en Vercel (Storage → Create Blob) y guardar el token en `.env.local` (archivo ignorado por git):
 
@@ -63,6 +64,8 @@ npm run publish-update -- "notas de la version"
 # compila, firma, sube el .exe a Vercel Blob, regenera public/latest.json
 # y hace push -> Vercel redespliega -> los usuarios reciben el aviso al abrir la app
 ```
+
+El script se niega a publicar si no estás en `main`, hay otros cambios sin commit, `main` está atrás de GitHub o la versión no es mayor que la publicada. Si la clave de firma tiene contraseña, defínela antes en `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
 **Compilar tu propio `.exe`** (opcional, para desarrollar):
 

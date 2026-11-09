@@ -6,6 +6,8 @@ import './style.css';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+// Todo dato que no sea literal del código (perfiles, actualizador) pasa por aquí antes de innerHTML.
+const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const root = $('#root');
 
 const translations = {
@@ -787,7 +789,7 @@ function syncTempUI(light) {
 }
 
 function renderLights() {
-  lightList.innerHTML = state.lights.map((light, index) => `<button class="light-card ${light.id === state.selectedLight ? 'selected' : ''} ${light.enabled ? '' : 'disabled'}" data-light-id="${light.id}"><span class="light-chip" style="--light-color:${light.color}">${light.type === 'directional' ? '↗' : light.type === 'spot' ? '⌁' : '●'}</span><span class="light-meta"><strong>${light.name}</strong><small>${light.type === 'directional' ? 'DIRECCIONAL' : light.type === 'spot' ? 'FOCO' : 'PUNTUAL'}</small></span><span class="light-number">${String(index + 1).padStart(2, '0')}</span><span class="light-toggle">${light.enabled ? '●' : '○'}</span></button>`).join('');
+  lightList.innerHTML = state.lights.map((light, index) => `<button class="light-card ${light.id === state.selectedLight ? 'selected' : ''} ${light.enabled ? '' : 'disabled'}" data-light-id="${escapeHtml(light.id)}"><span class="light-chip" style="--light-color:${escapeHtml(light.color)}">${light.type === 'directional' ? '↗' : light.type === 'spot' ? '⌁' : '●'}</span><span class="light-meta"><strong>${escapeHtml(light.name)}</strong><small>${light.type === 'directional' ? 'DIRECCIONAL' : light.type === 'spot' ? 'FOCO' : 'PUNTUAL'}</small></span><span class="light-number">${String(index + 1).padStart(2, '0')}</span><span class="light-toggle">${light.enabled ? '●' : '○'}</span></button>`).join('');
   $$('.light-card').forEach((button) => {
     button.addEventListener('click', (event) => {
       if (event.target.closest('.light-toggle')) {
@@ -809,11 +811,11 @@ function renderSelectedLight() {
   selectedLightPanel.innerHTML = `
     <div class="selected-light-title"><span>AJUSTES DE FUENTE</span>${state.lights.length > 1 ? `<button class="remove-light" id="remove-light" title="Quitar fuente">Eliminar</button>` : ''}</div>
     <div class="light-config-row"><label for="light-type">Tipo</label><select id="light-type"><option value="directional" ${light.type === 'directional' ? 'selected' : ''}>Direccional</option><option value="point" ${light.type === 'point' ? 'selected' : ''}>Puntual</option><option value="spot" ${light.type === 'spot' ? 'selected' : ''}>Foco</option></select></div>
-    <div class="light-config-row color-config"><label for="light-color">Tono</label><div class="light-color-picker"><input id="light-color" type="color" value="${light.color}" /><span>${light.color.toUpperCase()}</span></div></div>
-    <div class="range-group temp-group"><label for="light-temp">Temperatura <output id="light-temp-value">${light.kelvin} K</output></label><input id="light-temp" type="range" min="2000" max="10000" step="100" value="${light.kelvin}" style="background:linear-gradient(90deg,#ff9338,#ffcf8f,#ffffff,#cfe0ff,#79aaff)" /><div class="temp-presets">${[3000, 4000, 5000, 6000, 7000, 8000].map((k) => `<button class="temp-chip ${light.kelvin === k ? 'active' : ''}" data-kelvin="${k}">${k} K</button>`).join('')}</div></div>
+    <div class="light-config-row color-config"><label for="light-color">Tono</label><div class="light-color-picker"><input id="light-color" type="color" value="${escapeHtml(light.color)}" /><span>${escapeHtml(String(light.color).toUpperCase())}</span></div></div>
+    <div class="range-group temp-group"><label for="light-temp">Temperatura <output id="light-temp-value">${escapeHtml(light.kelvin)} K</output></label><input id="light-temp" type="range" min="2000" max="10000" step="100" value="${escapeHtml(light.kelvin)}" style="background:linear-gradient(90deg,#ff9338,#ffcf8f,#ffffff,#cfe0ff,#79aaff)" /><div class="temp-presets">${[3000, 4000, 5000, 6000, 7000, 8000].map((k) => `<button class="temp-chip ${light.kelvin === k ? 'active' : ''}" data-kelvin="${k}">${k} K</button>`).join('')}</div></div>
     <div class="range-group"><label for="light-intensity">Intensidad <output id="light-intensity-value">${Math.round(light.intensity * 10) / 10}</output></label><input id="light-intensity" type="range" min="0" max="${lightMaxIntensity(light.type)}" step="0.1" value="${Math.min(light.intensity, lightMaxIntensity(light.type))}" /></div>
     <div class="position-heading"><span>POSICIÓN / DIRECCIÓN</span><span>X · Y · Z</span></div>
-    <div class="coordinate-row"><label>X <input id="light-x" type="number" min="-6" max="6" step="0.1" value="${light.x}" /></label><label>Y <input id="light-y" type="number" min="-6" max="6" step="0.1" value="${light.y}" /></label><label>Z <input id="light-z" type="number" min="-6" max="6" step="0.1" value="${light.z}" /></label></div>
+    <div class="coordinate-row"><label>X <input id="light-x" type="number" min="-6" max="6" step="0.1" value="${escapeHtml(light.x)}" /></label><label>Y <input id="light-y" type="number" min="-6" max="6" step="0.1" value="${escapeHtml(light.y)}" /></label><label>Z <input id="light-z" type="number" min="-6" max="6" step="0.1" value="${escapeHtml(light.z)}" /></label></div>
     <label class="shadow-toggle"><input id="light-shadow" type="checkbox" ${light.shadow ? 'checked' : ''}/><span class="checkmark"></span><span>Proyectar sombras</span></label>
   `;
   $('#light-type').addEventListener('change', (event) => {
@@ -1173,7 +1175,6 @@ $('#reset-all').addEventListener('click', () => {
 // --- Perfiles de pose: guardan luces, material, fondo y cámara en el navegador ---
 const PROFILE_KEY = 'craneo-studio-profiles';
 const MATERIAL_NAMES = { bone: 'Hueso', metal: 'Metal', glass: 'Vidrio', wood: 'Madera' };
-const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
 function readProfiles() {
   try {
@@ -1393,6 +1394,7 @@ if (!('__TAURI_INTERNALS__' in window)) {
     .then((data) => {
       const url = data?.platforms?.['windows-x86_64']?.url;
       if (url) download.href = url;
+      if (data?.sha256) download.title = `SHA-256 del instalador: ${data.sha256}`;
     })
     .catch(() => {}); // sin latest.json nos quedamos con el href por defecto
 }
