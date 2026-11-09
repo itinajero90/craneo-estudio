@@ -1,11 +1,11 @@
 {
-  "version": "0.2.8",
-  "notes": "Primera version firmada con la clave nueva",
-  "pub_date": "2026-11-09T02:07:24Z",
-  "sha256": "d20f72487525c07e541f3bae437478dae8904e8d1482aee3102c291492554289",
+  "version": "0.2.9",
+  "notes": "Prueba de instalacion con la clave nueva",
+  "pub_date": "2026-11-09T02:31:52Z",
+  "sha256": "0fb545b5c487caa6d6410bd0968b902e07e0dc278feda8b8c2bdfe7431eaa8da",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaUtzOFRyd3RVWWxmZWZBQ3ZjRno5OGtXT2M2QkI3Y3ZJaG9XTThWUkY4L3d5bkVjZThwRE5vR3V0VGtRbWErYUE3MzFXa2FWVG91RFJieDhtaHl4NkNVRngxTnIrUEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTkwMDQzCWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuOF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjgKY2E0V3BoTVBJdFdyL3V3cGVINTh1aFhZaHNtbnFyblVDclpvOHVsT2pUSy9naFR6U0NlM1RGcDdFMzJBYnpOT1pSWXNlZWM0MDhscjdHQS9oQWR5Q2c9PQo=",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRaUtzOFRyd3RVWWhQN1NvVTF3NzBhWlpLUm9sWlBUazRlbEVLMVcrcmNXWDFlVjlvbXFYMGUwbUtjNGg5clZ5cG1oSmZqblNrczIzQ21EV0UyalNJZmI3QVAxd1ZrYndJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTkxNTEwCWZpbGU6Y3JhbmVvLXN0dWRpb18wLjIuOV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjkKakpSZjR1NkdXSTE2eXFhamh1L0JFazVaV3B4MXQ0Tld4Tm85K3JvU2ZpTFhVcWROdWF6ZlZ2VE9nZ1VnYzh4TnFKbk42MmM2ZGlSWVpEaTBNdThPQ1E9PQo=",
       "url": "https://craneo-studio.vercel.app/craneo-studio-setup.exe"
     }
   }
