@@ -89,6 +89,7 @@ Fallbacks: `--mono: 'DM Mono', 'Courier New', monospace` · `--sans/--display: .
 **Semántica de estado:**
 - Selección activa (chip/preset): fondo `#e5e1d9` + borde `#85867e` + texto `#252a27`.
 - Peligro/eliminar (hover ✕): `#af5f46` sobre `#efe6dd`.
+- Herramientas del boceto (Lápiz/Borrador): reposo `#f0ede6`, activa con el mismo estado de selección. Acción no disponible: `#b9b6ad`.
 
 ---
 

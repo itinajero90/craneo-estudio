@@ -156,18 +156,20 @@ root.innerHTML = `
     </section>
 
     <aside class="sketch-column">
-      <div class="sketch-heading"><div><span class="section-index">04</span><h2>Tu boceto</h2></div><div class="sketch-page">HOJA 01</div></div>
+      <div class="sketch-heading"><div><span class="section-index">05</span><h2>Tu boceto</h2></div><div class="sketch-page">HOJA 01</div></div>
       <div class="sketch-subtitle"><span>REFERENCIA DE OBSERVACIÓN</span><span>01 — CRÁNEO</span></div>
       <div class="paper-wrap" id="paper-wrap">
         <div class="paper-grid"></div>
         <canvas id="sketch-canvas" aria-label="Lienzo de dibujo del cráneo"></canvas>
         <div class="paper-corner">OSSO<br><span>ESTUDIO</span></div>
         <div class="paper-caption">NOTAS / PROPORCIÓN / LUZ</div>
+        <div class="brush-cursor" id="brush-cursor" hidden></div>
       </div>
       <div class="sketch-tools">
-        <div class="tool-row"><span class="tool-label">Trazo</span><div class="color-options"><button class="swatch selected" data-color="#252728" style="--swatch:#252728" title="Grafito"></button><button class="swatch" data-color="#bd5b3e" style="--swatch:#bd5b3e" title="Sanguina"></button><button class="swatch" data-color="#526f76" style="--swatch:#526f76" title="Azul gris"></button><label class="custom-color" title="Elegir color"><span>＋</span><input id="custom-color" type="color" value="#252728" /></label></div></div>
-        <div class="range-group brush-size"><label for="brush">Grosor <output id="brush-value">3 px</output></label><input id="brush" type="range" min="1" max="14" value="3" /></div>
-        <div class="sketch-actions"><button class="tool-action" id="undo-sketch">↶ <span>Deshacer</span></button><button class="tool-action" id="clear-sketch">⌫ <span>Limpiar hoja</span></button></div>
+        <div class="sketch-tool-switch" role="group" aria-label="Herramienta de dibujo"><button class="sketch-tool active" type="button" data-tool="pen" aria-pressed="true" title="Lápiz (B)">Lápiz</button><button class="sketch-tool" type="button" data-tool="eraser" aria-pressed="false" title="Borrador (E)">Borrador</button></div>
+        <div class="tool-row stroke-row"><span class="tool-label">Trazo</span><div class="color-options" id="color-options"><button class="swatch selected" type="button" data-color="#252728" style="--swatch:#252728" title="Grafito" aria-label="Grafito" aria-pressed="true"></button><button class="swatch" type="button" data-color="#bd5b3e" style="--swatch:#bd5b3e" title="Sanguina" aria-label="Sanguina" aria-pressed="false"></button><button class="swatch" type="button" data-color="#526f76" style="--swatch:#526f76" title="Azul gris" aria-label="Azul gris" aria-pressed="false"></button><label class="custom-color" title="Agregar color"><span>＋</span><input id="custom-color" type="color" value="#252728" aria-label="Agregar color" /></label></div></div>
+        <div class="range-group brush-size"><label for="brush"><span id="brush-label">Grosor</span> <output id="brush-value">3 px</output></label><input id="brush" type="range" min="1" max="14" value="3" /></div>
+        <div class="sketch-actions"><div class="sketch-history"><button class="tool-action" type="button" id="undo-sketch" title="Deshacer (Ctrl+Z)" disabled>↶ <span>Deshacer</span></button><button class="tool-action" type="button" id="redo-sketch" title="Rehacer (Ctrl+Y)" disabled>↷ <span>Rehacer</span></button></div><button class="tool-action" type="button" id="clear-sketch">✕ <span>Limpiar hoja</span></button></div>
       </div>
       <div class="sketch-tip"><span>✳</span><p>Observa cómo cambia el volumen al mover la luz. Dibuja aquí las formas y sombras principales.</p></div>
       <div class="sketch-bottom"><span>LIENZO DIGITAL</span><span>ARCHIVO · 01</span></div>
@@ -1128,12 +1130,15 @@ const sketchContext = sketchCanvas.getContext('2d');
 const paperWrap = $('#paper-wrap');
 let drawing = false;
 let currentColor = '#252728';
-let brushWidth = 3;
+let activeTool = 'pen';
+const toolSizes = { pen: 3, eraser: 18 };
+const TOOL_MAX_SIZE = { pen: 14, eraser: 48 };
 const undoStack = [];
+const redoStack = [];
 function resizeSketch(keep = true) {
   const old = keep && sketchCanvas.width ? document.createElement('canvas') : null;
   if (old) { old.width = sketchCanvas.width; old.height = sketchCanvas.height; old.getContext('2d').drawImage(sketchCanvas, 0, 0); }
-  const rect = paperWrap.getBoundingClientRect();
+  const rect = sketchCanvas.getBoundingClientRect();
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   sketchCanvas.width = Math.round(rect.width * ratio);
   sketchCanvas.height = Math.round(rect.height * ratio);
@@ -1143,32 +1148,172 @@ function resizeSketch(keep = true) {
 const sketchObserver = new ResizeObserver(() => resizeSketch(true));
 sketchObserver.observe(paperWrap);
 resizeSketch(false);
+function snapshotSketch() {
+  return sketchContext.getImageData(0, 0, sketchCanvas.width, sketchCanvas.height);
+}
+function updateHistoryButtons() {
+  $('#undo-sketch').disabled = !undoStack.length;
+  $('#redo-sketch').disabled = !redoStack.length;
+}
 function saveUndo() {
   if (undoStack.length > 12) undoStack.shift();
-  undoStack.push(sketchContext.getImageData(0, 0, sketchCanvas.width, sketchCanvas.height));
+  undoStack.push(snapshotSketch());
+  redoStack.length = 0;
+  updateHistoryButtons();
 }
+function restoreSketch(image) {
+  if (image.width === sketchCanvas.width && image.height === sketchCanvas.height) { sketchContext.putImageData(image, 0, 0); return; }
+  // La hoja cambió de tamaño desde que se guardó esta copia: se reescala para que encaje.
+  const copy = document.createElement('canvas');
+  copy.width = image.width; copy.height = image.height;
+  copy.getContext('2d').putImageData(image, 0, 0);
+  sketchContext.save();
+  sketchContext.setTransform(1, 0, 0, 1, 0, 0);
+  sketchContext.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+  sketchContext.drawImage(copy, 0, 0, sketchCanvas.width, sketchCanvas.height);
+  sketchContext.restore();
+}
+function stepHistory(from, to) {
+  if (drawing || !from.length) return;
+  to.push(snapshotSketch());
+  restoreSketch(from.pop());
+  updateHistoryButtons();
+}
+const undoSketch = () => stepHistory(undoStack, redoStack);
+const redoSketch = () => stepHistory(redoStack, undoStack);
 function sketchPoint(event) {
   const rect = sketchCanvas.getBoundingClientRect();
   return { x: event.clientX - rect.left, y: event.clientY - rect.top };
 }
+const brushCursor = $('#brush-cursor');
+function updateBrushCursor(point) {
+  const size = toolSizes[activeTool];
+  brushCursor.style.width = `${size}px`;
+  brushCursor.style.height = `${size}px`;
+  brushCursor.style.setProperty('--cursor-color', activeTool === 'pen' ? currentColor : '#85867e');
+  if (point) brushCursor.style.transform = `translate(${point.x - size / 2}px, ${point.y - size / 2}px)`;
+}
 sketchCanvas.addEventListener('pointerdown', (event) => {
+  if (drawing || event.button !== 0) return;
   drawing = true; sketchCanvas.setPointerCapture(event.pointerId); saveUndo();
   const point = sketchPoint(event); sketchContext.beginPath(); sketchContext.moveTo(point.x, point.y);
-  sketchContext.strokeStyle = currentColor; sketchContext.lineWidth = brushWidth; sketchContext.lineCap = 'round'; sketchContext.lineJoin = 'round';
+  // destination-out borra solo los trazos: la hoja y su cuadrícula están debajo del canvas.
+  sketchContext.globalCompositeOperation = activeTool === 'eraser' ? 'destination-out' : 'source-over';
+  sketchContext.strokeStyle = currentColor; sketchContext.lineWidth = toolSizes[activeTool]; sketchContext.lineCap = 'round'; sketchContext.lineJoin = 'round';
   sketchContext.lineTo(point.x + 0.01, point.y + 0.01); sketchContext.stroke();
 });
-sketchCanvas.addEventListener('pointermove', (event) => { if (!drawing) return; const point = sketchPoint(event); sketchContext.lineTo(point.x, point.y); sketchContext.stroke(); });
-const endDraw = () => { drawing = false; sketchContext.closePath(); };
+sketchCanvas.addEventListener('pointermove', (event) => {
+  const point = sketchPoint(event);
+  if (event.pointerType !== 'touch') { brushCursor.hidden = false; updateBrushCursor(point); }
+  if (!drawing) return;
+  sketchContext.lineTo(point.x, point.y); sketchContext.stroke();
+});
+sketchCanvas.addEventListener('pointerleave', () => { brushCursor.hidden = true; });
+const endDraw = () => { drawing = false; sketchContext.closePath(); sketchContext.globalCompositeOperation = 'source-over'; };
 sketchCanvas.addEventListener('pointerup', endDraw);
 sketchCanvas.addEventListener('pointercancel', endDraw);
-$$('.swatch').forEach((button) => button.addEventListener('click', () => {
-  currentColor = button.dataset.color;
-  $$('.swatch').forEach((item) => item.classList.toggle('selected', item === button));
-}));
-$('#custom-color').addEventListener('input', (event) => { currentColor = event.target.value; $$('.swatch').forEach((item) => item.classList.remove('selected')); });
-$('#brush').addEventListener('input', (event) => { brushWidth = Number(event.target.value); $('#brush-value').textContent = `${brushWidth} px`; });
-$('#undo-sketch').addEventListener('click', () => { const image = undoStack.pop(); if (image) sketchContext.putImageData(image, 0, 0); });
+function showBrushSize() {
+  $('#brush-value').textContent = `${toolSizes[activeTool]} px`;
+  updateBrushCursor();
+}
+function setSketchTool(tool) {
+  activeTool = tool;
+  $$('.sketch-tool').forEach((button) => {
+    const active = button.dataset.tool === tool;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  $('.sketch-column').dataset.tool = tool;
+  $('#brush-label').textContent = tool === 'eraser' ? 'Tamaño del borrador' : 'Grosor';
+  const brush = $('#brush');
+  brush.max = TOOL_MAX_SIZE[tool];
+  brush.value = toolSizes[tool];
+  showBrushSize();
+}
+$$('.sketch-tool').forEach((button) => button.addEventListener('click', () => setSketchTool(button.dataset.tool)));
+$('#brush').addEventListener('input', (event) => { toolSizes[activeTool] = Number(event.target.value); showBrushSize(); });
+
+// Colores propios: cada color elegido en ＋ se queda como una muestra más de la fila.
+const CUSTOM_COLORS_KEY = 'craneo-studio-sketch-colors';
+const MAX_CUSTOM_COLORS = 5;
+const colorOptions = $('#color-options');
+const colorPicker = $('#custom-color');
+let pendingSwatch = null;
+function setStrokeColor(color, swatch) {
+  currentColor = color;
+  colorPicker.value = color;
+  $$('.swatch').forEach((item) => {
+    item.classList.toggle('selected', item === swatch);
+    item.setAttribute('aria-pressed', String(item === swatch));
+  });
+  setSketchTool('pen');
+}
+function paintSwatch(swatch, color) {
+  const label = `Color ${color.toUpperCase()}`;
+  swatch.dataset.color = color;
+  swatch.style.setProperty('--swatch', color);
+  swatch.title = label;
+  swatch.setAttribute('aria-label', label);
+}
+function addCustomSwatch(color) {
+  const swatch = document.createElement('button');
+  swatch.type = 'button';
+  swatch.className = 'swatch custom';
+  swatch.setAttribute('aria-pressed', 'false');
+  paintSwatch(swatch, color);
+  colorOptions.insertBefore(swatch, colorPicker.closest('.custom-color'));
+  return swatch;
+}
+function loadCustomColors() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_COLORS_KEY));
+    if (!Array.isArray(saved)) return;
+    saved.filter((color) => /^#[0-9a-f]{6}$/.test(color)).slice(-MAX_CUSTOM_COLORS).forEach(addCustomSwatch);
+  } catch { /* Sin colores guardados: la fila queda con las muestras base. */ }
+}
+function saveCustomColors() {
+  try { localStorage.setItem(CUSTOM_COLORS_KEY, JSON.stringify($$('.swatch.custom').map((item) => item.dataset.color))); } catch { /* Los colores siguen disponibles en esta sesión. */ }
+}
+function previewPickerColor() {
+  const color = colorPicker.value.toLowerCase();
+  if (!pendingSwatch) pendingSwatch = addCustomSwatch(color);
+  paintSwatch(pendingSwatch, color);
+  setStrokeColor(color, pendingSwatch);
+}
+function commitPickerColor() {
+  if (!pendingSwatch) return;
+  const swatch = pendingSwatch;
+  pendingSwatch = null;
+  const duplicate = $$('.swatch').find((item) => item !== swatch && item.dataset.color === swatch.dataset.color);
+  if (duplicate) { swatch.remove(); setStrokeColor(duplicate.dataset.color, duplicate); }
+  const custom = $$('.swatch.custom');
+  custom.slice(0, Math.max(0, custom.length - MAX_CUSTOM_COLORS)).forEach((item) => item.remove());
+  saveCustomColors();
+}
+loadCustomColors();
+colorOptions.addEventListener('click', (event) => {
+  const swatch = event.target.closest('.swatch');
+  if (swatch) setStrokeColor(swatch.dataset.color, swatch);
+});
+colorPicker.addEventListener('click', commitPickerColor);
+colorPicker.addEventListener('input', previewPickerColor);
+colorPicker.addEventListener('change', () => { previewPickerColor(); commitPickerColor(); });
+
+$('#undo-sketch').addEventListener('click', undoSketch);
+$('#redo-sketch').addEventListener('click', redoSketch);
 $('#clear-sketch').addEventListener('click', () => { saveUndo(); sketchContext.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height); });
+document.addEventListener('keydown', (event) => {
+  if (event.target.matches?.('input:not([type="range"]), textarea, select, [contenteditable]')) return;
+  const key = event.key.toLowerCase();
+  if (event.ctrlKey || event.metaKey) {
+    if (key === 'z') { event.preventDefault(); if (event.shiftKey) redoSketch(); else undoSketch(); }
+    if (key === 'y') { event.preventDefault(); redoSketch(); }
+    return;
+  }
+  if (event.altKey) return;
+  if (key === 'b') setSketchTool('pen');
+  if (key === 'e') setSketchTool('eraser');
+});
 $('#save-sketch').addEventListener('click', () => {
   const exportCanvas = document.createElement('canvas');
   const ratio = window.devicePixelRatio || 1;

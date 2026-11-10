@@ -265,23 +265,33 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 1px sol
 .paper-wrap { position: relative; flex: 0 0 auto; height: min(43vh, 390px); min-height: 250px; margin-top: 10px; overflow: hidden; background: #f7f4ed; border: 1px solid #dcd7cd; box-shadow: 0 5px 13px #6c655b0b; }
 .paper-grid { position: absolute; inset: 0; opacity: .45; pointer-events: none; background-image: linear-gradient(#c8c1b41c 1px, transparent 1px), linear-gradient(90deg, #c8c1b41c 1px, transparent 1px); background-size: 24px 24px; }
 #sketch-canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.sketch-column[data-tool="eraser"] #sketch-canvas { cursor: none; }
+.brush-cursor { position: absolute; top: 0; left: 0; border: 1px solid var(--cursor-color, #85867e); border-radius: 50%; box-shadow: 0 0 0 1px #f7f4edb3; pointer-events: none; }
 .paper-corner { position: absolute; top: 12px; left: 13px; color: #b66c55; font: 700 9px var(--display); letter-spacing: .1em; line-height: 1.15; pointer-events: none; }
 .paper-corner span { color: #a6a095; font: 6px var(--mono); }
 .paper-caption { position: absolute; right: 10px; bottom: 9px; color: #aaa59a; font: 6px var(--mono); letter-spacing: .12em; pointer-events: none; }
 .sketch-tools { margin-top: 18px; }
+.sketch-tool-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sketch-tool { height: 27px; border: 1px solid #d5d2ca; border-radius: 2px; background: #f0ede6; color: #70716c; font: 500 10px var(--sans); cursor: pointer; transition: background .12s, border-color .12s, color .12s; }
+.sketch-tool:hover { background: #e5e1d9; color: #454741; }
+.sketch-tool.active { border-color: #85867e; background: #e5e1d9; color: #252a27; }
+.stroke-row { gap: 12px; margin-top: 14px; }
+.sketch-column[data-tool="eraser"] .color-options .swatch:not(:hover) { opacity: .45; }
 .tool-row { display: flex; align-items: center; justify-content: space-between; }
 .tool-label { color: #7f8079; font-size: 9px; }
-.color-options { display: flex; align-items: center; gap: 8px; }
-.swatch { width: 14px; height: 14px; padding: 0; border: 1px solid color-mix(in srgb, var(--swatch) 65%, #c7c3b8); border-radius: 50%; background: var(--swatch); cursor: pointer; }
+.color-options { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.swatch { flex: none; width: 14px; height: 14px; padding: 0; border: 1px solid color-mix(in srgb, var(--swatch) 65%, #c7c3b8); border-radius: 50%; background: var(--swatch); cursor: pointer; }
 .swatch.selected { outline: 1px solid #7f7a71; outline-offset: 2px; }
-.custom-color { width: 17px; height: 17px; position: relative; display: grid; place-items: center; overflow: hidden; color: #77766f; border: 1px dashed #aaa69c; border-radius: 50%; font-size: 12px; cursor: pointer; }
+.custom-color { flex: none; width: 17px; height: 17px; position: relative; display: grid; place-items: center; overflow: hidden; color: #77766f; border: 1px dashed #aaa69c; border-radius: 50%; font-size: 12px; cursor: pointer; }
 .custom-color input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
 .brush-size { margin-top: 16px; }
 .brush-size input { margin-top: 9px; }
 .sketch-actions { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e0dcd4; }
+.sketch-history { display: flex; gap: 12px; }
 .tool-action { padding: 4px 0; border: 0; background: none; color: #777972; font: 15px var(--sans); cursor: pointer; }
 .tool-action span { margin-left: 4px; font-size: 9px; }
 .tool-action:hover { color: #bd654b; }
+.tool-action:disabled { color: #b9b6ad; cursor: default; }
 .sketch-tip { display: flex; gap: 9px; margin-top: 20px; padding: 12px 10px; border: 1px solid #e0d9ce; background: #eeeae1; }
 .sketch-tip > span { color: #bf7357; font-size: 13px; }
 .sketch-tip p { margin: 0; color: #777870; font-size: 9px; line-height: 1.5; }
